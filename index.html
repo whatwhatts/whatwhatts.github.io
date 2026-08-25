@@ -315,7 +315,6 @@ footer{border-top:1px solid var(--border);padding:1.5rem 0;font-size:11px;color:
       <th>Ports</th>
       <th onclick="srt('chargers',1)">Power <span class="sa">↕</span></th>
       <th onclick="srt('chargers',3)">Peak Efficiency <span class="sa">↕</span></th>
-      <th onclick="srt('chargers',4)">Ripple (max) <span class="sa">↕</span></th>
       <th>Port Reset</th>
       <th onclick="srt('chargers',5)">Stress Test <span class="sa">↕</span></th>
       <th onclick="srt('chargers',6)">Verdict <span class="sa">↕</span></th>
@@ -573,7 +572,7 @@ const TYPES = {
   cables:     { len:'num', res:'num', pwr:'num', spd:'num', adv_spd:'num',
                 stress_conn_c:'num', stress_cable_c:'num',
                 emark:'bool', stress_pass:'bool' },
-  chargers:   { ports_n:'num', pwr:'num', total_pwr:'num', eff:'num', ripple:'num',
+  chargers:   { ports_n:'num', pwr:'num', total_pwr:'num', eff:'num',
                 case_temp_c:'num', throttle_single_drop:'num', throttle_total_drop:'num',
                 display:'bool', cable_in:'bool', xiaomi_tc:'bool', ports_reboot:'bool',
                 throttle_single_pass:'bool', throttle_total_pass:'bool' },
@@ -754,7 +753,7 @@ function renderCables(rows){
 
 function renderChargers(rows){
   const b=document.getElementById('body-chargers');
-  if(!rows.length){b.innerHTML=`<tr><td colspan="9"><div class="empty"><i class="ti ti-search"></i>No results found</div></td></tr>`;return;}
+  if(!rows.length){b.innerHTML=`<tr><td colspan="8"><div class="empty"><i class="ti ti-search"></i>No results found</div></td></tr>`;return;}
   b.innerHTML=rows.map(r=>`<tr>
     <td>
       <div class="nm">${r.name}</div>
@@ -771,7 +770,6 @@ function renderChargers(rows){
       <div class="sub">${r.total_pwr} W total</div>
     </td>
     <td class="num ${ec(r.eff)}">${r.eff}%</td>
-    <td class="num ${r.ripple<=30?'vg':r.ripple<=60?'vo':'vr'}">${r.ripple} mV</td>
     <td>${r.ports_reboot?`<span class="b bo"><i class="ti ti-alert-triangle" style="font-size:12px"></i> Resets ports</span>`:`<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Stable</span>`}</td>
     <td>
       <div class="sub" style="font-weight:600">Single port</div>
