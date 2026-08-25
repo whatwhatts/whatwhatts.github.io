@@ -313,12 +313,10 @@ footer{border-top:1px solid var(--border);padding:1.5rem 0;font-size:11px;color:
      <thead><tr>
       <th onclick="srt('chargers',0)">Charger <span class="sa">↕</span></th>
       <th>Ports</th>
-      <th onclick="srt('chargers',1)">Max Power <span class="sa">↕</span></th>
-      <th onclick="srt('chargers',2)">Total Power <span class="sa">↕</span></th>
-      <th>GaN</th>
-      <th>Converters</th>
+      <th onclick="srt('chargers',1)">Power <span class="sa">↕</span></th>
       <th onclick="srt('chargers',3)">Peak Efficiency <span class="sa">↕</span></th>
       <th onclick="srt('chargers',4)">Ripple (max) <span class="sa">↕</span></th>
+      <th>Port Reset</th>
       <th onclick="srt('chargers',5)">Stress Test <span class="sa">↕</span></th>
       <th onclick="srt('chargers',6)">Verdict <span class="sa">↕</span></th>
       <th>Links</th>
@@ -577,8 +575,8 @@ const TYPES = {
                 emark:'bool', stress_pass:'bool' },
   chargers:   { ports_n:'num', pwr:'num', total_pwr:'num', eff:'num', ripple:'num',
                 case_temp_c:'num', throttle_single_drop:'num', throttle_total_drop:'num',
-                gan:'bool', multi_conv:'bool', display:'bool', cable_in:'bool',
-                xiaomi_tc:'bool', throttle_single_pass:'bool', throttle_total_pass:'bool' },
+                display:'bool', cable_in:'bool', xiaomi_tc:'bool', ports_reboot:'bool',
+                throttle_single_pass:'bool', throttle_total_pass:'bool' },
   powerbanks: { rated:'num', rated_wh:'num', real:'num', eff5v:'num', eff_max:'num',
                 maxpwr:'num', hold:'num', cable:'bool', display:'bool' }
 };
@@ -756,7 +754,7 @@ function renderCables(rows){
 
 function renderChargers(rows){
   const b=document.getElementById('body-chargers');
-  if(!rows.length){b.innerHTML=`<tr><td colspan="11"><div class="empty"><i class="ti ti-search"></i>No results found</div></td></tr>`;return;}
+  if(!rows.length){b.innerHTML=`<tr><td colspan="9"><div class="empty"><i class="ti ti-search"></i>No results found</div></td></tr>`;return;}
   b.innerHTML=rows.map(r=>`<tr>
     <td>
       <div class="nm">${r.name}</div>
@@ -768,12 +766,13 @@ function renderChargers(rows){
       </div>
     </td>
     <td><span class="chip">${r.ports}</span></td>
-    <td class="num">${r.pwr} W</td>
-    <td class="num">${r.total_pwr} W</td>
-    <td>${yn(r.gan)}</td>
-    <td>${yn(r.multi_conv)}</td>
+    <td class="num" style="line-height:1.6">
+      <div>${r.pwr} W <span style="font-size:10px;font-weight:400;color:var(--text3)">/ port</span></div>
+      <div class="sub">${r.total_pwr} W total</div>
+    </td>
     <td class="num ${ec(r.eff)}">${r.eff}%</td>
     <td class="num ${r.ripple<=30?'vg':r.ripple<=60?'vo':'vr'}">${r.ripple} mV</td>
+    <td>${r.ports_reboot?`<span class="b bo"><i class="ti ti-alert-triangle" style="font-size:12px"></i> Resets ports</span>`:`<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Stable</span>`}</td>
     <td>
       <div class="sub" style="font-weight:600">Single port</div>
       <div>${r.throttle_single_pass?`<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>`:`<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> → ${r.throttle_single_drop} W</span>`}</div>
