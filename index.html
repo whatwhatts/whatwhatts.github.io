@@ -19,6 +19,18 @@
   --bluebg:rgba(88,166,255,.13);--blueb:rgba(88,166,255,.28);
   --r:6px;--rl:10px;
 }
+[data-theme="light"]{
+  --bg:#ffffff;--surface:#f6f8fa;--surface2:#eaeef2;
+  --border:rgba(27,31,36,0.08);--borders:rgba(27,31,36,0.15);
+  --text:#1f2328;--text2:#59636e;--text3:#818b98;
+  --accent:#0969da;
+  --green:#1a7f37;--gbg:rgba(26,127,55,.1);--gb:rgba(26,127,55,.25);
+  --orange:#9a6700;--obg:rgba(154,103,0,.1);--ob:rgba(154,103,0,.25);
+  --red:#cf222e;--rbg:rgba(207,34,46,.1);--rb:rgba(207,34,46,.25);
+  --bluebg:rgba(9,105,218,.1);--blueb:rgba(9,105,218,.25);
+}
+html{background:var(--bg)}
+body{transition:background .2s,color .2s}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5}
 a{color:inherit;text-decoration:none}
@@ -31,6 +43,8 @@ header{border-bottom:1px solid var(--border);padding:1.25rem 0}
 .logo em{color:var(--accent);font-style:normal}
 .logo-sub{font-size:10px;color:var(--text3);margin-top:3px;letter-spacing:.8px;text-transform:uppercase;font-weight:500}
 .hdr-right{display:flex;gap:1rem;align-items:center}
+.theme-btn{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border:1px solid var(--border);border-radius:var(--r);background:transparent;color:var(--text2);cursor:pointer;transition:color .15s,border-color .15s}
+.theme-btn:hover{color:var(--text);border-color:var(--borders)}
 .hdr-right a{font-size:12px;color:var(--text2);display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border:1px solid var(--border);border-radius:var(--r);transition:color .15s,border-color .15s}
 .hdr-right a:hover{color:var(--text);border-color:var(--borders)}
 
@@ -87,6 +101,11 @@ td{padding:10px 13px;vertical-align:middle}
 
 /* ── Chips ── */
 .chip{display:inline-block;padding:2px 7px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface2);font-size:11px;color:var(--text2)}
+
+/* ── YouTube preview thumbnail ── */
+.yt-prev{position:relative;display:inline-block}
+.yt-thumb{display:none;position:absolute;bottom:calc(100% + 8px);right:0;width:168px;height:94px;object-fit:cover;border-radius:var(--r);border:1px solid var(--borders);box-shadow:0 8px 24px rgba(0,0,0,.45);z-index:20;background:var(--surface2)}
+.yt-prev:hover .yt-thumb{display:block}
 
 /* ── Buy dropdown ── */
 .buy-drop{position:relative;display:inline-block}
@@ -163,6 +182,9 @@ footer{border-top:1px solid var(--border);padding:1.5rem 0;font-size:11px;color:
     <div class="logo-sub">Tested · Verified · Benchmarked</div>
    </div>
    <div class="hdr-right">
+    <button class="theme-btn" id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+     <i class="ti ti-sun" id="theme-icon"></i>
+    </button>
     <a href="https://youtube.com/@WhatWatts" target="_blank" rel="noopener">
      <i class="ti ti-brand-youtube"></i> YouTube
     </a>
@@ -503,6 +525,27 @@ footer{border-top:1px solid var(--border);padding:1.5rem 0;font-size:11px;color:
 
 <script>
 // ══════════════════════════════════════════════
+//  THEME — light/dark switch, remembers choice
+// ══════════════════════════════════════════════
+(function(){
+  const saved=localStorage.getItem('wt-theme');
+  const system=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';
+  applyTheme(saved||system);
+})();
+function applyTheme(t){
+  if(t==='light') document.documentElement.setAttribute('data-theme','light');
+  else document.documentElement.removeAttribute('data-theme');
+  const icon=document.getElementById('theme-icon');
+  if(icon) icon.className='ti '+(t==='light'?'ti-moon':'ti-sun');
+}
+function toggleTheme(){
+  const isLight=document.documentElement.getAttribute('data-theme')==='light';
+  const next=isLight?'dark':'light';
+  applyTheme(next);
+  localStorage.setItem('wt-theme',next);
+}
+
+// ══════════════════════════════════════════════
 //  DATA — грузится из Google Sheets (CSV)
 // ══════════════════════════════════════════════
 
@@ -595,10 +638,23 @@ function yn(v){
 }
 function rc(v){return v<100?'vg':v<200?'vo':'vr'}
 function ec(v){return v>=88?'vg':v>=80?'vo':'vr'}
+function ytId(url){
+  if(!url) return '';
+  const m=url.match(/(?:youtu\.be\/|v=|shorts\/)([\w-]{11})/);
+  return m?m[1]:'';
+}
+function reviewBtn(yt){
+  if(!yt||yt==='#') return '';
+  const id=ytId(yt);
+  return `<div class="yt-prev">
+    <a class="btn btn-yt" href="${yt}" target="_blank" rel="nofollow"><i class="ti ti-brand-youtube" style="font-size:13px"></i> Review</a>
+    ${id?`<img class="yt-thumb" src="https://img.youtube.com/vi/${id}/mqdefault.jpg" alt="" loading="lazy">`:''}
+  </div>`;
+}
 function lnks(yt,buy){
   return `<div class="btns">
-    ${yt&&yt!='#'?`<a class="btn btn-yt" href="${yt}" target="_blank" rel="nofollow"><i class="ti ti-brand-youtube" style="font-size:13px"></i> Review</a>`:''}
     ${buy&&buy!='#'?`<a class="btn" href="${buy}" target="_blank" rel="nofollow sponsored"><i class="ti ti-shopping-cart" style="font-size:12px"></i> Buy</a>`:''}
+    ${reviewBtn(yt)}
   </div>`;
 }
 function tc(v){return v>=75?'vr':v>=60?'vo':'vg'}
@@ -658,8 +714,8 @@ function renderCables(rows){
     <td style="font-size:11px;color:var(--text2);max-width:180px;line-height:1.5">${r.extra||'—'}</td>
     <td>
       <div class="btns">
-        ${r.yt&&r.yt!=='#'?`<a class="btn btn-yt" href="${r.yt}" target="_blank" rel="nofollow"><i class="ti ti-brand-youtube" style="font-size:13px"></i> Review</a>`:''}
         ${buyBtn(r.buy_am,r.buy_ali)}
+        ${reviewBtn(r.yt)}
       </div>
     </td>
   </tr>`;}).join('');
