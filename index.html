@@ -107,6 +107,15 @@ td{padding:10px 13px;vertical-align:middle}
 .yt-thumb{display:none;position:absolute;bottom:calc(100% + 8px);right:0;width:168px;height:94px;object-fit:cover;border-radius:var(--r);border:1px solid var(--borders);box-shadow:0 8px 24px rgba(0,0,0,.45);z-index:20;background:var(--surface2)}
 .yt-prev:hover .yt-thumb{display:block}
 
+/* ── Protocols dropdown ── */
+.proto-drop{position:relative;display:inline-block}
+.proto-btn{cursor:pointer}
+.proto-menu{display:none;position:absolute;top:calc(100% + 6px);left:0;background:var(--surface2);border:1px solid var(--borders);border-radius:var(--r);z-index:20;min-width:220px;padding:6px;box-shadow:0 8px 20px rgba(0,0,0,.4)}
+.proto-menu.show{display:block}
+.proto-item{font-size:12px;color:var(--text2);padding:6px 7px;border-radius:4px}
+.proto-item:not(:last-child){border-bottom:1px solid var(--border)}
+.proto-xm{color:var(--accent)}
+
 /* ── Buy dropdown ── */
 .buy-drop{position:relative;display:inline-block}
 .buy-menu{display:none;position:absolute;top:calc(100% + 4px);right:0;background:var(--surface2);border:1px solid var(--borders);border-radius:var(--r);overflow:hidden;z-index:10;min-width:140px;box-shadow:0 6px 16px rgba(0,0,0,.45)}
@@ -304,12 +313,14 @@ footer{border-top:1px solid var(--border);padding:1.5rem 0;font-size:11px;color:
      <thead><tr>
       <th onclick="srt('chargers',0)">Charger <span class="sa">↕</span></th>
       <th>Ports</th>
-      <th onclick="srt('chargers',2)">Actual Power <span class="sa">↕</span></th>
+      <th onclick="srt('chargers',1)">Max Power <span class="sa">↕</span></th>
+      <th onclick="srt('chargers',2)">Total Power <span class="sa">↕</span></th>
       <th>GaN</th>
-      <th onclick="srt('chargers',4)">Peak Efficiency <span class="sa">↕</span></th>
-      <th onclick="srt('chargers',5)">Ripple (max) <span class="sa">↕</span></th>
-      <th onclick="srt('chargers',6)">Full-load Hold <span class="sa">↕</span></th>
-      <th onclick="srt('chargers',7)">Verdict <span class="sa">↕</span></th>
+      <th>Converters</th>
+      <th onclick="srt('chargers',3)">Peak Efficiency <span class="sa">↕</span></th>
+      <th onclick="srt('chargers',4)">Ripple (max) <span class="sa">↕</span></th>
+      <th onclick="srt('chargers',5)">Stress Test <span class="sa">↕</span></th>
+      <th onclick="srt('chargers',6)">Verdict <span class="sa">↕</span></th>
       <th>Links</th>
      </tr></thead>
      <tbody id="body-chargers"></tbody>
@@ -564,8 +575,10 @@ const TYPES = {
   cables:     { len:'num', res:'num', pwr:'num', spd:'num', adv_spd:'num',
                 stress_conn_c:'num', stress_cable_c:'num',
                 emark:'bool', stress_pass:'bool' },
-  chargers:   { ports_n:'num', pwr:'num', eff:'num', ripple:'num', hold:'num',
-                gan:'bool', display:'bool', cable_in:'bool' },
+  chargers:   { ports_n:'num', pwr:'num', total_pwr:'num', eff:'num', ripple:'num',
+                case_temp_c:'num', throttle_single_drop:'num', throttle_total_drop:'num',
+                gan:'bool', multi_conv:'bool', display:'bool', cable_in:'bool',
+                xiaomi_tc:'bool', throttle_single_pass:'bool', throttle_total_pass:'bool' },
   powerbanks: { rated:'num', rated_wh:'num', real:'num', eff5v:'num', eff_max:'num',
                 maxpwr:'num', hold:'num', cable:'bool', display:'bool' }
 };
@@ -684,7 +697,27 @@ function toggleBuy(e,btn){
   document.querySelectorAll('.buy-menu.show').forEach(m=>m.classList.remove('show'));
   if(!wasOpen) menu.classList.add('show');
 }
-document.addEventListener('click',()=>document.querySelectorAll('.buy-menu.show').forEach(m=>m.classList.remove('show')));
+function protoBtn(extra,xiaomiTC){
+  const list=(extra||'').split(',').map(s=>s.trim()).filter(Boolean);
+  if(!list.length&&!xiaomiTC) return '';
+  return `<div class="proto-drop">
+    <button class="tag proto-btn" onclick="toggleDrop(event,this,'proto-menu')"><i class="ti ti-list-details" style="font-size:11px"></i> +protocols</button>
+    <div class="proto-menu">
+      ${xiaomiTC?`<div class="proto-item proto-xm"><i class="ti ti-bolt" style="font-size:12px"></i> Xiaomi Turbo Charge<div class="sub" style="margin-top:2px">Tested via Xiaomi Pad Mini (up to 67W)</div></div>`:''}
+      ${list.map(i=>`<div class="proto-item">${i}</div>`).join('')}
+    </div>
+  </div>`;
+}
+function toggleDrop(e,btn,menuClass){
+  e.stopPropagation();
+  const menu=btn.nextElementSibling;
+  const wasOpen=menu.classList.contains('show');
+  document.querySelectorAll('.'+menuClass+'.show').forEach(m=>m.classList.remove('show'));
+  if(!wasOpen) menu.classList.add('show');
+}
+document.addEventListener('click',()=>{
+  document.querySelectorAll('.buy-menu.show,.proto-menu.show').forEach(m=>m.classList.remove('show'));
+});
 
 // ══════════════════════════════════════════════
 //  RENDER
@@ -723,22 +756,31 @@ function renderCables(rows){
 
 function renderChargers(rows){
   const b=document.getElementById('body-chargers');
-  if(!rows.length){b.innerHTML=`<tr><td colspan="9"><div class="empty"><i class="ti ti-search"></i>No results found</div></td></tr>`;return;}
+  if(!rows.length){b.innerHTML=`<tr><td colspan="11"><div class="empty"><i class="ti ti-search"></i>No results found</div></td></tr>`;return;}
   b.innerHTML=rows.map(r=>`<tr>
     <td>
       <div class="nm">${r.name}</div>
-      <div class="sub" style="display:flex;gap:4px;margin-top:3px;flex-wrap:wrap">
+      <div class="sub" style="display:flex;gap:4px;margin-top:3px;flex-wrap:wrap;align-items:center">
+        <span class="tag">${r.pd}</span>
         ${r.display  ? '<span class="tag">📺 Display</span>'       : ''}
         ${r.cable_in ? '<span class="tag">🔌 Built-in cable</span>': ''}
-        <span class="tag">${r.pd}</span>
+        ${protoBtn(r.protocols_extra,r.xiaomi_tc)}
       </div>
     </td>
     <td><span class="chip">${r.ports}</span></td>
     <td class="num">${r.pwr} W</td>
+    <td class="num">${r.total_pwr} W</td>
     <td>${yn(r.gan)}</td>
+    <td>${yn(r.multi_conv)}</td>
     <td class="num ${ec(r.eff)}">${r.eff}%</td>
     <td class="num ${r.ripple<=30?'vg':r.ripple<=60?'vo':'vr'}">${r.ripple} mV</td>
-    <td style="font-size:12px;color:${r.hold===9999?'var(--green)':'var(--orange)'}">${r.holdlbl}</td>
+    <td>
+      <div class="sub" style="font-weight:600">Single port</div>
+      <div>${r.throttle_single_pass?`<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>`:`<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> → ${r.throttle_single_drop} W</span>`}</div>
+      <div class="sub" style="font-weight:600;margin-top:5px">Total load</div>
+      <div>${r.throttle_total_pass?`<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>`:`<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> → ${r.throttle_total_drop} W</span>`}</div>
+      <div class="sub" style="margin-top:5px">Case: <span class="${tc(r.case_temp_c)}">${r.case_temp_c}°C</span></div>
+    </td>
     <td>${badge(r.v)}</td>
     <td>${lnks(r.yt,r.buy)}</td>
   </tr>`).join('');
@@ -847,7 +889,7 @@ function applyF(name){
 // ══════════════════════════════════════════════
 const COLS={
   cables:    ['name','conn','len','res','pwr','spd','stress_conn_c','v'],
-  chargers:  ['name','ports','pwr','gan','eff','ripple','hold','v'],
+  chargers:  ['name','pwr','total_pwr','eff','ripple','case_temp_c','v'],
   powerbanks:['name','rated','real','eff5v','eff_max','maxpwr','recharge','hold','pt','v'],
 };
 
