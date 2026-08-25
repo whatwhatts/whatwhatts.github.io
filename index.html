@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WhatWatts — USB Testing Database</title>
+<meta name="description" content="Real-world USB cable, charger and powerbank tests. Actual measurements, not marketing specs.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.29.0/dist/tabler-icons.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+:root{
+  --bg:#0d1117;--surface:#161b22;--surface2:#21262d;
+  --border:rgba(255,255,255,0.08);--borders:rgba(255,255,255,0.15);
+  --text:#e6edf3;--text2:#8b949e;--text3:#6e7681;
+  --accent:#58a6ff;
+  --green:#3fb950;--gbg:rgba(63,185,80,.13);--gb:rgba(63,185,80,.28);
+  --orange:#d29922;--obg:rgba(210,153,34,.13);--ob:rgba(210,153,34,.28);
+  --red:#f85149;--rbg:rgba(248,81,73,.13);--rb:rgba(248,81,73,.28);
+  --bluebg:rgba(88,166,255,.13);--blueb:rgba(88,166,255,.28);
+  --r:6px;--rl:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1280px;margin:0 auto;padding:0 1.5rem}
+
+/* ── Header ── */
+header{border-bottom:1px solid var(--border);padding:1.25rem 0}
+.hdr{display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.logo{font-size:1.4rem;font-weight:700;letter-spacing:-.5px;line-height:1}
+.logo em{color:var(--accent);font-style:normal}
+.logo-sub{font-size:10px;color:var(--text3);margin-top:3px;letter-spacing:.8px;text-transform:uppercase;font-weight:500}
+.hdr-right{display:flex;gap:1rem;align-items:center}
+.hdr-right a{font-size:12px;color:var(--text2);display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border:1px solid var(--border);border-radius:var(--r);transition:color .15s,border-color .15s}
+.hdr-right a:hover{color:var(--text);border-color:var(--borders)}
+
+/* ── Tabs ── */
+.tab-bar{display:flex;gap:2px;padding-top:1.2rem;border-bottom:1px solid var(--border)}
+.tab{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;border-radius:var(--r) var(--r) 0 0;border:1px solid transparent;border-bottom:none;background:none;transition:color .15s,background .15s;position:relative;bottom:-1px;white-space:nowrap}
+.tab:hover{color:var(--text);background:var(--surface)}
+.tab.on{color:var(--accent);background:var(--surface);border-color:var(--border);border-bottom-color:var(--surface)}
+.cnt{font-size:11px;background:var(--surface2);border:1px solid var(--border);border-radius:999px;padding:1px 7px;color:var(--text3);font-weight:400;transition:background .15s,color .15s}
+.tab.on .cnt{background:var(--bluebg);border-color:var(--blueb);color:var(--accent)}
+
+/* ── Affiliate notice ── */
+.affiliate-note{font-size:11px;color:var(--text3);padding:.6rem 0 0;display:flex;align-items:center;gap:5px}
+
+/* ── Main ── */
+main{padding:1.2rem 0 4rem}
+.panel{display:none}.panel.on{display:block}
+
+/* ── Toolbar ── */
+.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:1rem;flex-wrap:wrap}
+.toolbar input,.toolbar select{font-size:12px;padding:6px 10px;border-radius:var(--r);border:1px solid var(--borders);background:var(--surface);color:var(--text);height:32px;outline:none;transition:border-color .15s}
+.toolbar input{width:210px}
+.toolbar input:focus,.toolbar select:focus{border-color:var(--accent)}
+.toolbar input::placeholder{color:var(--text3)}
+.lbl{font-size:12px;color:var(--text3);margin-left:auto}
+
+/* ── Table ── */
+.tbl-wrap{border-radius:var(--rl);border:1px solid var(--border);overflow:hidden;overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:680px}
+thead th{background:var(--surface);padding:9px 13px;text-align:left;font-weight:500;color:var(--text2);white-space:nowrap;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;position:sticky;top:0;z-index:2}
+thead th:hover{color:var(--text)}
+thead th.on{color:var(--accent)}
+.sa{font-size:10px;margin-left:2px;opacity:.4}
+thead th.on .sa{opacity:1}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--surface)}
+td{padding:10px 13px;vertical-align:middle}
+.nm{font-weight:500;line-height:1.3}
+.sub{font-size:11px;color:var(--text3);margin-top:1px}
+
+/* ── Badges ── */
+.b{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:500;white-space:nowrap}
+.bg{background:var(--gbg);color:var(--green);border:1px solid var(--gb)}
+.bo{background:var(--obg);color:var(--orange);border:1px solid var(--ob)}
+.br{background:var(--rbg);color:var(--red);border:1px solid var(--rb)}
+.bx{background:var(--surface2);color:var(--text3);border:1px solid var(--border)}
+
+/* ── Coloured numbers ── */
+.vg{color:var(--green);font-weight:600}
+.vo{color:var(--orange);font-weight:600}
+.vr{color:var(--red);font-weight:600}
+.num{font-variant-numeric:tabular-nums}
+
+/* ── Chips ── */
+.chip{display:inline-block;padding:2px 7px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface2);font-size:11px;color:var(--text2)}
+
+/* ── Link buttons ── */
+.btns{display:flex;gap:5px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:3px;padding:4px 9px;border-radius:var(--r);border:1px solid var(--borders);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:500;cursor:pointer;transition:color .12s,border-color .12s,background .12s;white-space:nowrap}
+.btn:hover{color:var(--text);border-color:var(--accent);background:var(--surface)}
+.btn-yt{border-color:rgba(255,80,80,.25);color:#f87171}
+.btn-yt:hover{border-color:#f87171;background:rgba(248,113,113,.08)}
+
+/* ── States ── */
+.empty{text-align:center;padding:3rem;color:var(--text3);font-size:13px}
+.empty i{font-size:1.8rem;display:block;margin-bottom:.5rem;opacity:.3}
+
+/* ── Footer ── */
+footer{border-top:1px solid var(--border);padding:1.5rem 0;font-size:11px;color:var(--text3);line-height:1.8}
+.ftr{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap}
+
+/* ── Support tab accent ── */
+.tab-support{color:#f87171 !important}
+.tab-support.on{color:#f87171 !important;border-color:rgba(248,113,113,.3) !important;border-bottom-color:var(--surface) !important}
+.tab-support:hover{background:rgba(248,113,113,.06) !important}
+
+/* ── Gear & Support panels ── */
+.page-panel{padding:1.5rem 0}
+.section-title{font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:.9rem}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.9rem}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:1.1rem 1.2rem;transition:border-color .15s}
+.card:hover{border-color:var(--borders)}
+.card-icon{width:36px;height:36px;border-radius:var(--r);background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin-bottom:.8rem;font-size:18px}
+.card-name{font-weight:600;font-size:14px;margin-bottom:2px}
+.card-sub{font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:.8rem}
+.card-tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:.9rem}
+.tag{font-size:10px;padding:2px 7px;border-radius:999px;background:var(--surface2);border:1px solid var(--border);color:var(--text3)}
+.card-link{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:500;color:var(--accent);border:1px solid var(--blueb);border-radius:var(--r);padding:5px 10px;background:var(--bluebg);transition:opacity .15s}
+.card-link:hover{opacity:.8}
+
+/* ── Support panel ── */
+.support-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:.9rem;margin-bottom:2rem}
+.support-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:1.3rem 1.4rem;display:flex;flex-direction:column;gap:.7rem;transition:border-color .15s}
+.support-card:hover{border-color:var(--borders)}
+.support-card .icon{font-size:1.6rem}
+.support-card .s-title{font-weight:600;font-size:14px}
+.support-card .s-desc{font-size:12px;color:var(--text2);line-height:1.6}
+.support-card .s-btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:8px 16px;border-radius:var(--r);font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s;text-align:center}
+.support-card .s-btn:hover{opacity:.85}
+.btn-red{background:#f87171;color:#fff;border:none}
+.btn-blue{background:var(--accent);color:#0d1117;border:none}
+.btn-green{background:var(--green);color:#0d1117;border:none}
+.btn-gray{background:var(--surface2);color:var(--text);border:1px solid var(--borders)}
+.support-note{font-size:12px;color:var(--text3);line-height:1.8;padding:1rem 1.2rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--rl)}
+
+/* ── Responsive ── */
+@media(max-width:600px){
+  .toolbar input{width:100%}
+  .hdr-right,.logo-sub{display:none}
+  td,th{padding:8px 10px}
+  .tab{padding:8px 12px;font-size:12px}
+}
+</style>
+</head>
+<body>
+
+<header>
+ <div class="wrap">
+  <div class="hdr">
+   <div>
+    <div class="logo">What<em>Watts</em></div>
+    <div class="logo-sub">Tested · Verified · Benchmarked</div>
+   </div>
+   <div class="hdr-right">
+    <a href="https://youtube.com/@WhatWatts" target="_blank" rel="noopener">
+     <i class="ti ti-brand-youtube"></i> YouTube
+    </a>
+   </div>
+  </div>
+  <div class="tab-bar">
+   <button class="tab on" onclick="sw('cables',this)"><i class="ti ti-plug"></i> Cables <span class="cnt" id="cnt-cables">6</span></button>
+   <button class="tab" onclick="sw('chargers',this)"><i class="ti ti-bolt"></i> Chargers <span class="cnt" id="cnt-chargers">4</span></button>
+   <button class="tab" onclick="sw('powerbanks',this)"><i class="ti ti-battery-charging"></i> Powerbanks <span class="cnt" id="cnt-powerbanks">3</span></button>
+   <button class="tab" onclick="sw('gear',this)"><i class="ti ti-tool"></i> Test Gear</button>
+   <button class="tab tab-support" onclick="sw('support',this)"><i class="ti ti-heart"></i> Support</button>
+  </div>
+ </div>
+</header>
+
+<main>
+ <div class="wrap">
+  <div class="affiliate-note">
+   <i class="ti ti-info-circle" style="font-size:13px"></i>
+   This page contains affiliate links. As an Amazon Associate I earn from qualifying purchases at no extra cost to you.
+  </div>
+
+  <!-- ══ CABLES ══ -->
+  <div class="panel on" id="panel-cables">
+   <div class="toolbar" style="margin-top:.9rem">
+    <input type="text" id="s-cables" placeholder="🔍 Search cables…" oninput="applyF('cables')">
+    <select id="f-cables-conn" onchange="applyF('cables')">
+     <option value="">All connectors</option>
+     <option>C–C</option><option>A–C</option><option>C–Lightning</option>
+    </select>
+    <select id="f-cables-v" onchange="applyF('cables')">
+     <option value="">All verdicts</option>
+     <option>Excellent</option><option>Good</option><option>Caution</option><option>Poor</option>
+    </select>
+    <select id="f-cables-display" onchange="applyF('cables')">
+     <option value="">Display output: any</option>
+     <option value="yes">Supports display output</option>
+     <option value="none">No display output</option>
+    </select>
+    <span class="lbl" id="lbl-cables">6 items</span>
+   </div>
+   <div class="tbl-wrap">
+    <table id="tbl-cables">
+     <thead><tr>
+      <th onclick="srt('cables',0)">Cable <span class="sa">↕</span></th>
+      <th onclick="srt('cables',1)">Type <span class="sa">↕</span></th>
+      <th onclick="srt('cables',2)">Length <span class="sa">↕</span></th>
+      <th onclick="srt('cables',3)">Resistance <span class="sa">↕</span></th>
+      <th onclick="srt('cables',4)">Max Power <span class="sa">↕</span></th>
+      <th onclick="srt('cables',5)">Adv. Speed <span class="sa">↕</span></th>
+      <th onclick="srt('cables',6)">Real Speed <span class="sa">↕</span></th>
+      <th>E-Marker</th>
+      <th onclick="srt('cables',8)">Verdict <span class="sa">↕</span></th>
+      <th>Additional Info</th>
+      <th>Links</th>
+     </tr></thead>
+     <tbody id="body-cables"></tbody>
+    </table>
+   </div>
+  </div>
+
+  <!-- ══ CHARGERS ══ -->
+  <div class="panel" id="panel-chargers">
+   <div class="toolbar" style="margin-top:.9rem">
+    <input type="text" id="s-chargers" placeholder="🔍 Search chargers…" oninput="applyF('chargers')">
+    <select id="f-chargers-pwr" onchange="applyF('chargers')">
+     <option value="">All power ranges</option>
+     <option value="up65">Up to 65 W</option>
+     <option value="65-100">65–100 W</option>
+     <option value="100-140">100–140 W</option>
+     <option value="140+">140 W+</option>
+    </select>
+    <select id="f-chargers-ports" onchange="applyF('chargers')">
+     <option value="">All port configs</option>
+     <option value="1">1 port</option>
+     <option value="2">2 ports</option>
+     <option value="3">3+ ports</option>
+    </select>
+    <select id="f-chargers-pd" onchange="applyF('chargers')">
+     <option value="">All PD standards</option>
+     <option value="PD 3.0">PD 3.0 (up to 20V)</option>
+     <option value="PD 3.1 EPR">PD 3.1 EPR (28V+)</option>
+    </select>
+    <select id="f-chargers-display" onchange="applyF('chargers')">
+     <option value="">Display: any</option>
+     <option value="yes">Display: Yes</option>
+     <option value="no">Display: No</option>
+    </select>
+    <select id="f-chargers-cable" onchange="applyF('chargers')">
+     <option value="">Built-in cable: any</option>
+     <option value="yes">Built-in cable: Yes</option>
+     <option value="no">Built-in cable: No</option>
+    </select>
+    <select id="f-chargers-v" onchange="applyF('chargers')">
+     <option value="">All verdicts</option>
+     <option>Excellent</option><option>Good</option><option>Caution</option><option>Poor</option>
+    </select>
+    <span class="lbl" id="lbl-chargers">4 items</span>
+   </div>
+   <div class="tbl-wrap">
+    <table id="tbl-chargers">
+     <thead><tr>
+      <th onclick="srt('chargers',0)">Charger <span class="sa">↕</span></th>
+      <th>Ports</th>
+      <th onclick="srt('chargers',2)">Actual Power <span class="sa">↕</span></th>
+      <th>GaN</th>
+      <th onclick="srt('chargers',4)">Peak Efficiency <span class="sa">↕</span></th>
+      <th onclick="srt('chargers',5)">Ripple (max) <span class="sa">↕</span></th>
+      <th onclick="srt('chargers',6)">Full-load Hold <span class="sa">↕</span></th>
+      <th onclick="srt('chargers',7)">Verdict <span class="sa">↕</span></th>
+      <th>Links</th>
+     </tr></thead>
+     <tbody id="body-chargers"></tbody>
+    </table>
+   </div>
+  </div>
+
+  <!-- ══ POWERBANKS ══ -->
+  <div class="panel" id="panel-powerbanks">
+   <div class="toolbar" style="margin-top:.9rem">
+    <input type="text" id="s-powerbanks" placeholder="🔍 Search powerbanks…" oninput="applyF('powerbanks')">
+    <select id="f-powerbanks-cap" onchange="applyF('powerbanks')">
+     <option value="">All capacities</option>
+     <option value="up10">Up to 10 000 mAh</option>
+     <option value="10-20">10 000–20 000 mAh</option>
+     <option value="20+">20 000+ mAh</option>
+    </select>
+    <select id="f-powerbanks-pd" onchange="applyF('powerbanks')">
+     <option value="">All PD standards</option>
+     <option value="PD 3.0">PD 3.0 (up to 20V)</option>
+     <option value="PD 3.1 EPR">PD 3.1 EPR (28V+)</option>
+    </select>
+    <select id="f-powerbanks-cable" onchange="applyF('powerbanks')">
+     <option value="">Built-in cable: any</option>
+     <option value="yes">Built-in cable: Yes</option>
+     <option value="no">Built-in cable: No</option>
+    </select>
+    <select id="f-powerbanks-display" onchange="applyF('powerbanks')">
+     <option value="">Display: any</option>
+     <option value="yes">Display: Yes</option>
+     <option value="no">Display: No</option>
+    </select>
+    <select id="f-powerbanks-v" onchange="applyF('powerbanks')">
+     <option value="">All verdicts</option>
+     <option>Excellent</option><option>Good</option><option>Caution</option><option>Poor</option>
+    </select>
+    <span class="lbl" id="lbl-powerbanks">3 items</span>
+   </div>
+   <div class="tbl-wrap">
+    <table id="tbl-powerbanks">
+     <thead><tr>
+      <th onclick="srt('powerbanks',0)">Powerbank <span class="sa">↕</span></th>
+      <th onclick="srt('powerbanks',1)">Rated <span class="sa">↕</span></th>
+      <th onclick="srt('powerbanks',2)">Real (Wh) <span class="sa">↕</span></th>
+      <th onclick="srt('powerbanks',3)">Eff. 5V <span class="sa">↕</span></th>
+      <th onclick="srt('powerbanks',4)">Eff. Max <span class="sa">↕</span></th>
+      <th onclick="srt('powerbanks',5)">Max Output <span class="sa">↕</span></th>
+      <th onclick="srt('powerbanks',6)">Recharge <span class="sa">↕</span></th>
+      <th onclick="srt('powerbanks',7)">Full-power Hold <span class="sa">↕</span></th>
+      <th>Pass-through</th>
+      <th onclick="srt('powerbanks',9)">Verdict <span class="sa">↕</span></th>
+      <th>Links</th>
+     </tr></thead>
+     <tbody id="body-powerbanks"></tbody>
+    </table>
+   </div>
+  </div>
+
+  <!-- ══ TEST GEAR ══ -->
+  <div class="panel" id="panel-gear">
+   <div class="page-panel">
+    <div class="section-title">My Testing Equipment</div>
+    <div class="cards">
+
+     <div class="card">
+      <div class="card-icon">⚡</div>
+      <div class="card-name">Power-Z KM003C</div>
+      <div class="card-sub">Primary USB-C tester. Reads voltage, current, wattage, all fast-charge protocols and e-marker chip data in real time. PD 3.1 capable.</div>
+      <div class="card-tags"><span class="tag">Cables</span><span class="tag">Chargers</span><span class="tag">Powerbanks</span><span class="tag">Protocols</span><span class="tag">E-Marker</span></div>
+      <div class="btns" style="margin-top:auto">
+       <a class="btn btn-yt" href="https://youtu.be/vAPqMIntiXs" target="_blank" rel="nofollow"><i class="ti ti-brand-youtube" style="font-size:13px"></i> Review</a>
+       <a class="btn" href="https://amzn.to/4b0DsJ5" target="_blank" rel="nofollow sponsored"><i class="ti ti-brand-amazon" style="font-size:12px"></i> Amazon</a>
+       <a class="btn" href="https://s.click.aliexpress.com/e/_c3BzNNtt" target="_blank" rel="nofollow sponsored">AliExpress</a>
+      </div>
+     </div>
+
+     <div class="card">
+      <div class="card-icon">🔬</div>
+      <div class="card-name">WITRN K2</div>
+      <div class="card-sub">Secondary USB-C tester used for cross-verification of protocol detection and ripple measurements alongside Power-Z.</div>
+      <div class="card-tags"><span class="tag">Protocols</span><span class="tag">Ripple</span><span class="tag">Verification</span></div>
+      <div class="btns" style="margin-top:auto">
+       <a class="btn btn-yt" href="https://youtu.be/BYLND4wAUBs" target="_blank" rel="nofollow"><i class="ti ti-brand-youtube" style="font-size:13px"></i> Review</a>
+       <a class="btn" href="https://amzn.to/30PVer0" target="_blank" rel="nofollow sponsored"><i class="ti ti-brand-amazon" style="font-size:12px"></i> Amazon</a>
+       <a class="btn" href="https://s.click.aliexpress.com/e/_c3XaAZjD" target="_blank" rel="nofollow sponsored">AliExpress</a>
+      </div>
+     </div>
+
+     <div class="card">
+      <div class="card-icon">📊</div>
+      <div class="card-name">FNB58 (PD 3.1)</div>
+      <div class="card-sub">USB-A tester with fast sampling for dynamic load testing, efficiency measurements and protocol verification across all power profiles.</div>
+      <div class="card-tags"><span class="tag">USB-A</span><span class="tag">Efficiency</span><span class="tag">Dynamic load</span><span class="tag">PD 3.1</span></div>
+      <div class="btns" style="margin-top:auto">
+       <a class="btn btn-yt" href="https://youtu.be/F48Mqq_sFnQ" target="_blank" rel="nofollow"><i class="ti ti-brand-youtube" style="font-size:13px"></i> Review</a>
+       <a class="btn" href="https://amzn.to/4cc9Z0W" target="_blank" rel="nofollow sponsored"><i class="ti ti-brand-amazon" style="font-size:12px"></i> Amazon</a>
+       <a class="btn" href="https://s.click.aliexpress.com/e/_c3JlICFv" target="_blank" rel="nofollow sponsored">AliExpress</a>
+      </div>
+     </div>
+
+     <div class="card">
+      <div class="card-icon">🌡️</div>
+      <div class="card-name">UNI-T UTi721M Thermal Camera</div>
+      <div class="card-sub">Thermal imaging used during stress tests to measure surface temperatures of charger bodies, port clusters, wall plugs and cable connectors under sustained load.</div>
+      <div class="card-tags"><span class="tag">Thermals</span><span class="tag">Stress test</span><span class="tag">Safety</span></div>
+      <div class="btns" style="margin-top:auto">
+       <a class="btn btn-yt" href="https://youtu.be/-upmoWMwejk" target="_blank" rel="nofollow"><i class="ti ti-brand-youtube" style="font-size:13px"></i> How I use it</a>
+       <a class="btn" href="https://amzn.to/4aZuZWk" target="_blank" rel="nofollow sponsored"><i class="ti ti-brand-amazon" style="font-size:12px"></i> Amazon</a>
+       <a class="btn" href="https://s.click.aliexpress.com/e/_c4ektNFp" target="_blank" rel="nofollow sponsored">AliExpress</a>
+      </div>
+     </div>
+
+     <div class="card">
+      <div class="card-icon">📡</div>
+      <div class="card-name">Wireless QI Tester WPX-0001A</div>
+      <div class="card-sub">Dedicated wireless charging tester for measuring actual power delivered over Qi, verifying wattage claims on wireless chargers.</div>
+      <div class="card-tags"><span class="tag">Wireless</span><span class="tag">Qi</span><span class="tag">Chargers</span></div>
+      <div class="btns" style="margin-top:auto">
+       <a class="btn btn-yt" href="https://youtu.be/X5cs1w5Y9Rk" target="_blank" rel="nofollow"><i class="ti ti-brand-youtube" style="font-size:13px"></i> How I use it</a>
+       <a class="btn" href="https://amzn.to/4sEIyRV" target="_blank" rel="nofollow sponsored"><i class="ti ti-brand-amazon" style="font-size:12px"></i> Amazon</a>
+       <a class="btn" href="https://s.click.aliexpress.com/e/_c2zZxoDT" target="_blank" rel="nofollow sponsored">AliExpress</a>
+      </div>
+     </div>
+
+     <div class="card">
+      <div class="card-icon">🔌</div>
+      <div class="card-name">WITRN UL004 Load Module</div>
+      <div class="card-sub">External load module for controlled discharge tests on powerbanks. Used to measure real capacity and efficiency at defined current levels.</div>
+      <div class="card-tags"><span class="tag">Powerbanks</span><span class="tag">Discharge</span><span class="tag">Capacity</span></div>
+      <div class="btns" style="margin-top:auto">
+       <a class="btn btn-yt" href="https://youtu.be/L7jLugYkYl4" target="_blank" rel="nofollow"><i class="ti ti-brand-youtube" style="font-size:13px"></i> How I use it</a>
+       <a class="btn" href="https://amzn.to/4rCFg22" target="_blank" rel="nofollow sponsored"><i class="ti ti-brand-amazon" style="font-size:12px"></i> Amazon</a>
+       <a class="btn" href="https://s.click.aliexpress.com/e/_c45bjOyj" target="_blank" rel="nofollow sponsored">AliExpress</a>
+      </div>
+     </div>
+
+     <div class="card">
+      <div class="card-icon">⚙️</div>
+      <div class="card-name">ET5410A+ Electronic DC Load</div>
+      <div class="card-sub">Programmable DC electronic load for sustained stress testing at precise wattage targets. Used for full-load endurance tests on chargers and powerbanks.</div>
+      <div class="card-tags"><span class="tag">Stress test</span><span class="tag">Chargers</span><span class="tag">Powerbanks</span><span class="tag">Endurance</span></div>
+      <div class="btns" style="margin-top:auto">
+       <a class="btn" href="https://amzn.to/4uFaE1Q" target="_blank" rel="nofollow sponsored"><i class="ti ti-brand-amazon" style="font-size:12px"></i> Amazon</a>
+       <a class="btn" href="https://s.click.aliexpress.com/e/_c3fYZZyL" target="_blank" rel="nofollow sponsored">AliExpress</a>
+      </div>
+     </div>
+
+    </div>
+   </div>
+  </div>
+
+  <!-- ══ SUPPORT ══ -->
+  <div class="panel" id="panel-support">
+   <div class="page-panel">
+    <div class="section-title">Support WhatWatts</div>
+    <div class="support-grid">
+
+     <div class="support-card">
+      <div class="icon">🎯</div>
+      <div class="s-title">Patreon — Monthly Support</div>
+      <div class="s-desc">Join as a monthly supporter and get early access to test results before they're published. Every dollar goes directly to new hardware for testing.</div>
+      <a class="s-btn btn-red" href="https://patreon.com/WhatWatts" target="_blank" rel="noopener">Support on Patreon</a>
+     </div>
+
+     <div class="support-card">
+      <div class="icon">☕</div>
+      <div class="s-title">Ko-fi — One-time Tip</div>
+      <div class="s-desc">No subscription needed. Send a one-time tip of any amount to help fund the next round of tests.</div>
+      <a class="s-btn btn-green" href="https://ko-fi.com/WhatWatts" target="_blank" rel="noopener">Tip on Ko-fi</a>
+     </div>
+
+     <div class="support-card">
+      <div class="icon">▶️</div>
+      <div class="s-title">Subscribe on YouTube</div>
+      <div class="s-desc">Completely free — and the single most impactful thing you can do. Every subscriber helps the algorithm push the channel further.</div>
+      <a class="s-btn btn-gray" href="https://youtube.com/@WhatWatts" target="_blank" rel="noopener"><i class="ti ti-brand-youtube"></i> Subscribe</a>
+     </div>
+
+     <div class="support-card">
+      <div class="icon">🛒</div>
+      <div class="s-title">Use Affiliate Links</div>
+      <div class="s-desc">Buy gear through the links in the database or Test Gear page. You pay the same price — I earn a small commission at no extra cost to you.</div>
+      <a class="s-btn btn-blue" href="#" onclick="sw('cables',document.querySelector('.tab'));return false;">Browse the database →</a>
+     </div>
+
+    </div>
+
+    <div class="support-note">
+     <strong style="color:var(--text2)">Where does the money go?</strong><br>
+     Every device in this database was purchased at full retail price — no freebies, no sponsorships, no brand relationships.
+     Test equipment, thermal cameras, electronic loads, and the devices themselves all come out of pocket.
+     Your support funds the next batch of hardware and keeps every verdict 100% independent.
+     <br><br>
+     <span style="color:var(--text2)">Payments processed via Patreon and Ko-fi → withdrawn through Payoneer.</span>
+    </div>
+   </div>
+  </div>
+
+ </div>
+</main>
+
+<footer>
+ <div class="wrap">
+  <div class="ftr">
+   <div>
+    <div>© 2025 WhatWatts · Independent USB Testing Database</div>
+    <div>As an Amazon Associate I earn from qualifying purchases. All measurements are independently tested with Power-Z, WITRN, FNB58, oscilloscope and thermal camera.</div>
+   </div>
+   <div><a href="https://youtube.com/@WhatWatts" target="_blank" rel="noopener" style="color:var(--text3)">YouTube →</a></div>
+  </div>
+ </div>
+</footer>
+
+<script>
+// ══════════════════════════════════════════════
+//  DATA — грузится из Google Sheets (CSV)
+// ══════════════════════════════════════════════
+
+// Вставь сюда три ссылки, полученные через
+// File → Share → Publish to web → [лист] → CSV
+const URLS = {
+  cables:     'https://docs.google.com/spreadsheets/d/e/2PACX-1vTUTJYjJlglY6KCi2xVJ6SQEu4eupsQHAmwN2clNO7UYdRoCW3VylfKJQFfujAzk4uTu1hCISzTiK7V/pub?gid=0&single=true&output=csv',
+  chargers:   'https://docs.google.com/spreadsheets/d/e/2PACX-1vTUTJYjJlglY6KCi2xVJ6SQEu4eupsQHAmwN2clNO7UYdRoCW3VylfKJQFfujAzk4uTu1hCISzTiK7V/pub?gid=684819996&single=true&output=csv',
+  powerbanks: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTUTJYjJlglY6KCi2xVJ6SQEu4eupsQHAmwN2clNO7UYdRoCW3VylfKJQFfujAzk4uTu1hCISzTiK7V/pub?gid=1097208691&single=true&output=csv'
+};
+
+let DATA = { cables: [], chargers: [], powerbanks: [] };
+
+// какие поля нужно превратить из текста CSV в числа/булевы
+const TYPES = {
+  cables:     { len:'num', res:'num', pwr:'num', spd:'num', emark:'bool' },
+  chargers:   { ports_n:'num', pwr:'num', eff:'num', ripple:'num', hold:'num',
+                gan:'bool', display:'bool', cable_in:'bool' },
+  powerbanks: { rated:'num', rated_wh:'num', real:'num', eff5v:'num', eff_max:'num',
+                maxpwr:'num', hold:'num', cable:'bool', display:'bool' }
+};
+
+function castRow(row, types){
+  const out = {...row};
+  for(const key in types){
+    const t = types[key];
+    const raw = String(out[key] ?? '').trim().toLowerCase();
+    if(t==='num')  out[key] = parseFloat(out[key]) || 0;
+    if(t==='bool') out[key] = raw==='true' || raw==='yes';
+  }
+  return out;
+}
+
+function loadSheet(name){
+  return new Promise(resolve=>{
+    if(!URLS[name] || URLS[name].startsWith('ВСТАВЬ')){
+      console.warn(`URL для "${name}" не задан — лист будет пустым`);
+      resolve([]);
+      return;
+    }
+    Papa.parse(URLS[name], {
+      download:true, header:true, skipEmptyLines:true,
+      complete: res => resolve(res.data.map(r=>castRow(r, TYPES[name]))),
+      error: err => { console.error(`Ошибка загрузки "${name}":`, err); resolve([]); }
+    });
+  });
+}
+
+async function initData(){
+  const [c, ch, pb] = await Promise.all(
+    ['cables','chargers','powerbanks'].map(loadSheet)
+  );
+  DATA.cables = c; DATA.chargers = ch; DATA.powerbanks = pb;
+
+  ['cables','chargers','powerbanks'].forEach(n=>{
+    S[n].sorted = [...DATA[n]];
+    const cnt = document.getElementById('cnt-'+n);
+    const lbl = document.getElementById('lbl-'+n);
+    if(cnt) cnt.textContent = DATA[n].length;
+    if(lbl) lbl.textContent = `${DATA[n].length} items`;
+    render(n, DATA[n]);
+  });
+}
+
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+const S={
+  cables:    {sorted:null,col:-1,asc:true},
+  chargers:  {sorted:null,col:-1,asc:true},
+  powerbanks:{sorted:null,col:-1,asc:true},
+};
+
+// ══════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════
+const vi={Excellent:'ti-circle-check',Good:'ti-circle-check',Caution:'ti-alert-triangle',Poor:'ti-x'};
+const vc={Excellent:'bg',Good:'bg',Caution:'bo',Poor:'br'};
+
+function badge(v){
+  if(!v) return '—';
+  return `<span class="b ${vc[v]||'bx'}"><i class="ti ${vi[v]||'ti-minus'}" style="font-size:12px"></i> ${v}</span>`;
+}
+function yn(v){
+  if(!v||v===false) return `<span class="b bx"><i class="ti ti-minus" style="font-size:12px"></i> No</span>`;
+  if(v===true||v==='Yes') return `<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Yes</span>`;
+  return `<span class="b bo"><i class="ti ti-alert-triangle" style="font-size:12px"></i> ${v}</span>`;
+}
+function rc(v){return v<100?'vg':v<200?'vo':'vr'}
+function ec(v){return v>=88?'vg':v>=80?'vo':'vr'}
+function lnks(yt,buy){
+  return `<div class="btns">
+    ${yt&&yt!='#'?`<a class="btn btn-yt" href="${yt}" target="_blank" rel="nofollow"><i class="ti ti-brand-youtube" style="font-size:13px"></i> Review</a>`:''}
+    ${buy&&buy!='#'?`<a class="btn" href="${buy}" target="_blank" rel="nofollow sponsored"><i class="ti ti-shopping-cart" style="font-size:12px"></i> Buy</a>`:''}
+  </div>`;
+}
+
+// ══════════════════════════════════════════════
+//  RENDER
+// ══════════════════════════════════════════════
+function renderCables(rows){
+  const b=document.getElementById('body-cables');
+  if(!rows.length){b.innerHTML=`<tr><td colspan="12"><div class="empty"><i class="ti ti-search"></i>No results found</div></td></tr>`;return;}
+  b.innerHTML=rows.map(r=>{
+    return `<tr>
+    <td><div class="nm">${r.name}</div><div class="sub">${r.brand}</div></td>
+    <td><span class="chip">${r.conn}</span></td>
+    <td class="num">${r.len>=1?r.len+' m':Math.round(r.len*100)+' cm'}</td>
+    <td class="num ${rc(r.res)}">${r.res} mΩ</td>
+    <td class="num">${r.pwr} W</td>
+    <td style="font-size:11px;color:var(--text3)">${r.spd_lbl}</td>
+    <td style="font-size:12px;font-weight:500;color:var(--text2)">${r.real_spd}</td>
+    <td>${yn(r.emark)}</td>
+    <td>${badge(r.v)}</td>
+    <td style="font-size:11px;color:var(--text2);max-width:180px;line-height:1.5">${r.extra||'—'}</td>
+    <td>${lnks(r.yt,r.buy)}</td>
+  </tr>`;}).join('');
+}
+
+function renderChargers(rows){
+  const b=document.getElementById('body-chargers');
+  if(!rows.length){b.innerHTML=`<tr><td colspan="9"><div class="empty"><i class="ti ti-search"></i>No results found</div></td></tr>`;return;}
+  b.innerHTML=rows.map(r=>`<tr>
+    <td>
+      <div class="nm">${r.name}</div>
+      <div class="sub" style="display:flex;gap:4px;margin-top:3px;flex-wrap:wrap">
+        ${r.display  ? '<span class="tag">📺 Display</span>'       : ''}
+        ${r.cable_in ? '<span class="tag">🔌 Built-in cable</span>': ''}
+        <span class="tag">${r.pd}</span>
+      </div>
+    </td>
+    <td><span class="chip">${r.ports}</span></td>
+    <td class="num">${r.pwr} W</td>
+    <td>${yn(r.gan)}</td>
+    <td class="num ${ec(r.eff)}">${r.eff}%</td>
+    <td class="num ${r.ripple<=30?'vg':r.ripple<=60?'vo':'vr'}">${r.ripple} mV</td>
+    <td style="font-size:12px;color:${r.hold===9999?'var(--green)':'var(--orange)'}">${r.holdlbl}</td>
+    <td>${badge(r.v)}</td>
+    <td>${lnks(r.yt,r.buy)}</td>
+  </tr>`).join('');
+}
+
+function renderPowerbanks(rows){
+  const b=document.getElementById('body-powerbanks');
+  if(!rows.length){b.innerHTML=`<tr><td colspan="9"><div class="empty"><i class="ti ti-search"></i>No results found</div></td></tr>`;return;}
+  b.innerHTML=rows.map(r=>`<tr>
+    <td>
+      <div class="nm">${r.name}</div>
+      <div class="sub" style="display:flex;gap:4px;margin-top:3px;flex-wrap:wrap">
+        ${r.display ? '<span class="tag">📺 Display</span>'       : ''}
+        ${r.cable   ? '<span class="tag">🔌 Built-in cable</span>': ''}
+        <span class="tag">${r.pd}</span>
+      </div>
+    </td>
+    <td class="num" style="line-height:1.6">
+      ${r.rated.toLocaleString()} mAh<br>
+      <span style="font-size:11px;color:var(--text3)">${r.rated_wh} Wh rated</span>
+    </td>
+    <td class="num">${r.real} Wh</td>
+    <td class="num ${ec(r.eff5v)}">${r.eff5v}%</td>
+    <td class="num ${ec(r.eff_max)}">${r.eff_max}%</td>
+    <td class="num">${r.maxpwr} W</td>
+    <td style="font-size:12px;color:var(--text2)">${r.recharge}</td>
+    <td style="font-size:12px;color:${r.hold===9999?'var(--green)':'var(--orange)'}">${r.holdlbl}</td>
+    <td>${yn(r.pt==='Yes'?true:r.pt==='Limited'?r.pt:false)}</td>
+    <td>${badge(r.v)}</td>
+    <td>${lnks(r.yt,r.buy)}</td>
+  </tr>`).join('');
+}
+
+function render(name,rows){
+  if(name==='cables')     renderCables(rows);
+  if(name==='chargers')   renderChargers(rows);
+  if(name==='powerbanks') renderPowerbanks(rows);
+}
+
+// ══════════════════════════════════════════════
+//  FILTER
+// ══════════════════════════════════════════════
+function applyF(name){
+  const q=(document.getElementById('s-'+name)?.value||'').toLowerCase();
+  const v        = document.getElementById('f-'+name+'-v')?.value||'';
+  const conn     = name==='cables'     ? document.getElementById('f-cables-conn')?.value||''       : '';
+  const c_disp   = name==='cables'     ? document.getElementById('f-cables-display')?.value||''     : '';
+  const pwr      = name==='chargers'   ? document.getElementById('f-chargers-pwr')?.value||''      : '';
+  const ports    = name==='chargers'   ? document.getElementById('f-chargers-ports')?.value||''    : '';
+  const pd       = name==='chargers'   ? document.getElementById('f-chargers-pd')?.value||''       : '';
+  const ch_disp  = name==='chargers'   ? document.getElementById('f-chargers-display')?.value||''  : '';
+  const ch_cable = name==='chargers'   ? document.getElementById('f-chargers-cable')?.value||''    : '';
+  const cap      = name==='powerbanks' ? document.getElementById('f-powerbanks-cap')?.value||''    : '';
+  const pb_cable = name==='powerbanks' ? document.getElementById('f-powerbanks-cable')?.value||''  : '';
+  const pb_disp  = name==='powerbanks' ? document.getElementById('f-powerbanks-display')?.value||'': '';
+
+  let out=DATA[name].filter(r=>{
+    const txt=Object.values(r).join(' ').toLowerCase();
+    if(q&&!txt.includes(q))return false;
+    if(v&&r.v!==v)return false;
+    if(conn&&r.conn!==conn)return false;
+    if(c_disp==='yes' &&(!r.display_out||r.display_out==='none'||r.display_out==='n/a'))return false;
+    if(c_disp==='none'&&r.display_out&&r.display_out!=='none'&&r.display_out!=='n/a')  return false;
+    // Charger filters
+    if(pwr){
+      if(pwr==='up65'   &&!(r.pwr<=65))             return false;
+      if(pwr==='65-100' &&!(r.pwr>65&&r.pwr<=100))  return false;
+      if(pwr==='100-140'&&!(r.pwr>100&&r.pwr<=140)) return false;
+      if(pwr==='140+'   &&!(r.pwr>140))              return false;
+    }
+    if(ports){
+      if(ports==='1'&&r.ports_n!==1) return false;
+      if(ports==='2'&&r.ports_n!==2) return false;
+      if(ports==='3'&&r.ports_n<3)   return false;
+    }
+    if(pd       &&r.pd!==pd)                         return false;
+    if(ch_disp  ==='yes'&&!r.display)                return false;
+    if(ch_disp  ==='no' && r.display)                return false;
+    if(ch_cable ==='yes'&&!r.cable_in)               return false;
+    if(ch_cable ==='no' && r.cable_in)               return false;
+    // Powerbank filters
+    if(cap){
+      if(cap==='up10' &&!(r.rated<=10000))               return false;
+      if(cap==='10-20'&&!(r.rated>10000&&r.rated<=20000))return false;
+      if(cap==='20+'  &&!(r.rated>20000))                return false;
+    }
+    if(pb_cable==='yes'&&!r.cable)   return false;
+    if(pb_cable==='no' && r.cable)   return false;
+    if(pb_disp ==='yes'&&!r.display) return false;
+    if(pb_disp ==='no' && r.display) return false;
+    return true;
+  });
+  if(S[name].col>=0)out=doSort(name,out);
+  S[name].sorted=out;
+  document.getElementById('lbl-'+name).textContent=out.length===DATA[name].length?`${out.length} items`:`${out.length} of ${DATA[name].length}`;
+  document.getElementById('cnt-'+name).textContent=out.length;
+  render(name,out);
+}
+
+// ══════════════════════════════════════════════
+//  SORT
+// ══════════════════════════════════════════════
+const COLS={
+  cables:    ['name','conn','len','res','pwr','spd_lbl','real_spd','display_out','emark','v'],
+  chargers:  ['name','ports','pwr','gan','eff','ripple','hold','v'],
+  powerbanks:['name','rated','real','eff5v','eff_max','maxpwr','recharge','hold','pt','v'],
+};
+
+function srt(name,col){
+  const s=S[name];
+  s.asc=(s.col===col)?!s.asc:true;
+  s.col=col;
+  document.querySelectorAll(`#tbl-${name} thead th`).forEach((th,i)=>{
+    th.classList.toggle('on',i===col);
+    const a=th.querySelector('.sa');
+    if(a)a.textContent=i===col?(s.asc?'↑':'↓'):'↕';
+  });
+  const rows=S[name].sorted||DATA[name];
+  S[name].sorted=doSort(name,rows);
+  render(name,S[name].sorted);
+}
+
+function doSort(name,arr){
+  const s=S[name];
+  if(s.col<0)return arr;
+  const key=COLS[name][s.col];
+  return [...arr].sort((a,b)=>{
+    const av=a[key],bv=b[key];
+    let res=typeof av==='string'?av.localeCompare(bv):av-bv;
+    return s.asc?res:-res;
+  });
+}
+
+// ══════════════════════════════════════════════
+//  TABS
+// ══════════════════════════════════════════════
+function sw(name,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('panel-'+name).classList.add('on');
+  // скрываем affiliate notice для нетабличных вкладок
+  const notice=document.querySelector('.affiliate-note');
+  if(notice) notice.style.display=(name==='gear'||name==='support')?'none':'flex';
+}
+
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+initData();
+</script>
+</body>
+</html>
