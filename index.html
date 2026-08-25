@@ -88,6 +88,13 @@ td{padding:10px 13px;vertical-align:middle}
 /* ── Chips ── */
 .chip{display:inline-block;padding:2px 7px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface2);font-size:11px;color:var(--text2)}
 
+/* ── Buy dropdown ── */
+.buy-drop{position:relative;display:inline-block}
+.buy-menu{display:none;position:absolute;top:calc(100% + 4px);right:0;background:var(--surface2);border:1px solid var(--borders);border-radius:var(--r);overflow:hidden;z-index:10;min-width:140px;box-shadow:0 6px 16px rgba(0,0,0,.45)}
+.buy-menu.show{display:block}
+.buy-menu a{display:flex;align-items:center;gap:7px;padding:8px 11px;font-size:12px;color:var(--text2);white-space:nowrap;transition:background .12s,color .12s}
+.buy-menu a:hover{background:var(--surface);color:var(--text)}
+
 /* ── Link buttons ── */
 .btns{display:flex;gap:5px;flex-wrap:wrap}
 .btn{display:inline-flex;align-items:center;gap:3px;padding:4px 9px;border-radius:var(--r);border:1px solid var(--borders);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:500;cursor:pointer;transition:color .12s,border-color .12s,background .12s;white-space:nowrap}
@@ -205,10 +212,10 @@ footer{border-top:1px solid var(--border);padding:1.5rem 0;font-size:11px;color:
       <th onclick="srt('cables',2)">Length <span class="sa">↕</span></th>
       <th onclick="srt('cables',3)">Resistance <span class="sa">↕</span></th>
       <th onclick="srt('cables',4)">Max Power <span class="sa">↕</span></th>
-      <th onclick="srt('cables',5)">Adv. Speed <span class="sa">↕</span></th>
-      <th onclick="srt('cables',6)">Real Speed <span class="sa">↕</span></th>
+      <th onclick="srt('cables',5)">Speed <span class="sa">↕</span></th>
       <th>E-Marker</th>
-      <th onclick="srt('cables',8)">Verdict <span class="sa">↕</span></th>
+      <th onclick="srt('cables',6)">Stress Test <span class="sa">↕</span></th>
+      <th onclick="srt('cables',7)">Verdict <span class="sa">↕</span></th>
       <th>Additional Info</th>
       <th>Links</th>
      </tr></thead>
@@ -496,7 +503,9 @@ let DATA = { cables: [], chargers: [], powerbanks: [] };
 
 // какие поля нужно превратить из текста CSV в числа/булевы
 const TYPES = {
-  cables:     { len:'num', res:'num', pwr:'num', spd:'num', emark:'bool' },
+  cables:     { len:'num', res:'num', pwr:'num', spd:'num', adv_spd:'num',
+                stress_conn_c:'num', stress_cable_c:'num',
+                emark:'bool', stress_pass:'bool' },
   chargers:   { ports_n:'num', pwr:'num', eff:'num', ripple:'num', hold:'num',
                 gan:'bool', display:'bool', cable_in:'bool' },
   powerbanks: { rated:'num', rated_wh:'num', real:'num', eff5v:'num', eff_max:'num',
@@ -577,26 +586,67 @@ function lnks(yt,buy){
     ${buy&&buy!='#'?`<a class="btn" href="${buy}" target="_blank" rel="nofollow sponsored"><i class="ti ti-shopping-cart" style="font-size:12px"></i> Buy</a>`:''}
   </div>`;
 }
+function tc(v){return v>=75?'vr':v>=60?'vo':'vg'}
+function stressTier(pwr){
+  if(pwr>=240) return '140W test (28V/5A)';
+  if(pwr>=100) return '100W test (20V/5A)';
+  return '60W test (20V/3A)';
+}
+let buyId=0;
+function buyBtn(am,ali){
+  const hasAm=am&&am!=='#', hasAli=ali&&ali!=='#';
+  if(!hasAm&&!hasAli) return '';
+  if(hasAm&&!hasAli) return `<a class="btn" href="${am}" target="_blank" rel="nofollow sponsored"><i class="ti ti-shopping-cart" style="font-size:12px"></i> Buy</a>`;
+  if(!hasAm&&hasAli) return `<a class="btn" href="${ali}" target="_blank" rel="nofollow sponsored"><i class="ti ti-shopping-cart" style="font-size:12px"></i> Buy</a>`;
+  return `<div class="buy-drop">
+    <button class="btn" onclick="toggleBuy(event,this)"><i class="ti ti-shopping-cart" style="font-size:12px"></i> Buy <i class="ti ti-chevron-down" style="font-size:9px"></i></button>
+    <div class="buy-menu">
+      <a href="${am}" target="_blank" rel="nofollow sponsored"><i class="ti ti-brand-amazon" style="font-size:13px"></i> Amazon</a>
+      <a href="${ali}" target="_blank" rel="nofollow sponsored"><i class="ti ti-shopping-bag" style="font-size:13px"></i> AliExpress</a>
+    </div>
+  </div>`;
+}
+function toggleBuy(e,btn){
+  e.stopPropagation();
+  const menu=btn.nextElementSibling;
+  const wasOpen=menu.classList.contains('show');
+  document.querySelectorAll('.buy-menu.show').forEach(m=>m.classList.remove('show'));
+  if(!wasOpen) menu.classList.add('show');
+}
+document.addEventListener('click',()=>document.querySelectorAll('.buy-menu.show').forEach(m=>m.classList.remove('show')));
 
 // ══════════════════════════════════════════════
 //  RENDER
 // ══════════════════════════════════════════════
 function renderCables(rows){
   const b=document.getElementById('body-cables');
-  if(!rows.length){b.innerHTML=`<tr><td colspan="12"><div class="empty"><i class="ti ti-search"></i>No results found</div></td></tr>`;return;}
+  if(!rows.length){b.innerHTML=`<tr><td colspan="11"><div class="empty"><i class="ti ti-search"></i>No results found</div></td></tr>`;return;}
   b.innerHTML=rows.map(r=>{
+    const exceeds=r.spd>r.adv_spd;
     return `<tr>
     <td><div class="nm">${r.name}</div><div class="sub">${r.brand}</div></td>
     <td><span class="chip">${r.conn}</span></td>
     <td class="num">${r.len>=1?r.len+' m':Math.round(r.len*100)+' cm'}</td>
     <td class="num ${rc(r.res)}">${r.res} mΩ</td>
     <td class="num">${r.pwr} W</td>
-    <td style="font-size:11px;color:var(--text3)">${r.spd_lbl}</td>
-    <td style="font-size:12px;font-weight:500;color:var(--text2)">${r.real_spd}</td>
+    <td>
+      <div style="font-size:11px;color:var(--text3)">${r.spd_lbl}</div>
+      ${exceeds?`<div style="font-size:11px;font-weight:600;color:var(--green)">↑ real: ${r.real_spd}</div>`:''}
+    </td>
     <td>${yn(r.emark)}</td>
+    <td>
+      <div>${r.stress_pass?`<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>`:`<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> Throttled</span>`}</div>
+      <div class="sub">${stressTier(r.pwr)}</div>
+      <div class="sub">Conn <span class="${tc(r.stress_conn_c)}">${r.stress_conn_c}°C</span> · Cable <span class="${tc(r.stress_cable_c)}">${r.stress_cable_c}°C</span></div>
+    </td>
     <td>${badge(r.v)}</td>
     <td style="font-size:11px;color:var(--text2);max-width:180px;line-height:1.5">${r.extra||'—'}</td>
-    <td>${lnks(r.yt,r.buy)}</td>
+    <td>
+      <div class="btns">
+        ${r.yt&&r.yt!=='#'?`<a class="btn btn-yt" href="${r.yt}" target="_blank" rel="nofollow"><i class="ti ti-brand-youtube" style="font-size:13px"></i> Review</a>`:''}
+        ${buyBtn(r.buy_am,r.buy_ali)}
+      </div>
+    </td>
   </tr>`;}).join('');
 }
 
@@ -721,7 +771,7 @@ function applyF(name){
 //  SORT
 // ══════════════════════════════════════════════
 const COLS={
-  cables:    ['name','conn','len','res','pwr','spd_lbl','real_spd','display_out','emark','v'],
+  cables:    ['name','conn','len','res','pwr','spd','stress_conn_c','v'],
   chargers:  ['name','ports','pwr','gan','eff','ripple','hold','v'],
   powerbanks:['name','rated','real','eff5v','eff_max','maxpwr','recharge','hold','pt','v'],
 };
