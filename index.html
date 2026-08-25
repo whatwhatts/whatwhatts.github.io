@@ -197,10 +197,25 @@ footer{border-top:1px solid var(--border);padding:1.5rem 0;font-size:11px;color:
      <option value="">All verdicts</option>
      <option>Excellent</option><option>Good</option><option>Caution</option><option>Poor</option>
     </select>
-    <select id="f-cables-display" onchange="applyF('cables')">
-     <option value="">Display output: any</option>
-     <option value="yes">Supports display output</option>
-     <option value="none">No display output</option>
+    <select id="f-cables-pwr" onchange="applyF('cables')">
+     <option value="">All power</option>
+     <option value="60">60 W</option>
+     <option value="100">100 W</option>
+     <option value="240">240 W</option>
+    </select>
+    <select id="f-cables-emark" onchange="applyF('cables')">
+     <option value="">E-Marker: any</option>
+     <option value="yes">Has E-Marker</option>
+     <option value="no">No E-Marker</option>
+    </select>
+    <select id="f-cables-spd" onchange="applyF('cables')">
+     <option value="">All speeds</option>
+     <option value="0.48">480 Mbps</option>
+     <option value="5">5 Gbps</option>
+     <option value="10">10 Gbps</option>
+     <option value="20">20 Gbps</option>
+     <option value="40">40 Gbps</option>
+     <option value="80">80 Gbps</option>
     </select>
     <span class="lbl" id="lbl-cables">6 items</span>
    </div>
@@ -714,7 +729,9 @@ function applyF(name){
   const q=(document.getElementById('s-'+name)?.value||'').toLowerCase();
   const v        = document.getElementById('f-'+name+'-v')?.value||'';
   const conn     = name==='cables'     ? document.getElementById('f-cables-conn')?.value||''       : '';
-  const c_disp   = name==='cables'     ? document.getElementById('f-cables-display')?.value||''     : '';
+  const c_pwr    = name==='cables'     ? document.getElementById('f-cables-pwr')?.value||''         : '';
+  const c_emark  = name==='cables'     ? document.getElementById('f-cables-emark')?.value||''       : '';
+  const c_spd    = name==='cables'     ? document.getElementById('f-cables-spd')?.value||''         : '';
   const pwr      = name==='chargers'   ? document.getElementById('f-chargers-pwr')?.value||''      : '';
   const ports    = name==='chargers'   ? document.getElementById('f-chargers-ports')?.value||''    : '';
   const pd       = name==='chargers'   ? document.getElementById('f-chargers-pd')?.value||''       : '';
@@ -729,8 +746,10 @@ function applyF(name){
     if(q&&!txt.includes(q))return false;
     if(v&&r.v!==v)return false;
     if(conn&&r.conn!==conn)return false;
-    if(c_disp==='yes' &&(!r.display_out||r.display_out==='none'||r.display_out==='n/a'))return false;
-    if(c_disp==='none'&&r.display_out&&r.display_out!=='none'&&r.display_out!=='n/a')  return false;
+    if(c_pwr&&Number(r.pwr)!==Number(c_pwr))return false;
+    if(c_emark==='yes'&&!r.emark)return false;
+    if(c_emark==='no'&&r.emark)return false;
+    if(c_spd&&Number(r.adv_spd)!==Number(c_spd)&&Number(r.spd)!==Number(c_spd))return false;
     // Charger filters
     if(pwr){
       if(pwr==='up65'   &&!(r.pwr<=65))             return false;
