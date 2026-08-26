@@ -103,9 +103,9 @@ td{padding:10px 13px;vertical-align:middle}
 .chip{display:inline-block;padding:2px 7px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface2);font-size:11px;color:var(--text2)}
 
 /* ── YouTube preview thumbnail ── */
-.yt-prev{position:relative;display:inline-block}
-.yt-thumb{display:none;position:absolute;bottom:calc(100% + 8px);right:0;width:168px;height:94px;object-fit:cover;border-radius:var(--r);border:1px solid var(--borders);box-shadow:0 8px 24px rgba(0,0,0,.45);z-index:20;background:var(--surface2)}
-.yt-prev:hover .yt-thumb{display:block}
+.yt-prev{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-decoration:none}
+.yt-thumb{display:block;width:88px;height:49px;object-fit:cover;border-radius:var(--r);border:1px solid var(--borders);background:var(--surface2);transition:transform .15s,border-color .15s}
+.yt-prev:hover .yt-thumb{transform:scale(1.04);border-color:var(--borders)}
 
 /* ── Protocols dropdown ── */
 .proto-drop{position:relative;display:inline-block}
@@ -124,7 +124,7 @@ td{padding:10px 13px;vertical-align:middle}
 .buy-menu a:hover{background:var(--surface);color:var(--text)}
 
 /* ── Link buttons ── */
-.btns{display:flex;gap:5px;flex-wrap:wrap}
+.btns{display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end}
 .btn{display:inline-flex;align-items:center;gap:3px;padding:4px 9px;border-radius:var(--r);border:1px solid var(--borders);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:500;cursor:pointer;transition:color .12s,border-color .12s,background .12s;white-space:nowrap}
 .btn:hover{color:var(--text);border-color:var(--accent);background:var(--surface)}
 .btn-yt{border-color:rgba(255,80,80,.25);color:#f87171}
@@ -572,7 +572,7 @@ let DATA = { cables: [], chargers: [], powerbanks: [] };
 const TYPES = {
   cables:     { len:'num', res:'num', pwr:'num', spd:'num', adv_spd:'num',
                 stress_conn_c:'num', stress_cable_c:'num',
-                emark:'bool', stress_pass:'bool' },
+                emark:'bool', stress_pass:'bool', display:'bool' },
   chargers:   { ports_n:'num', pwr:'num', total_pwr:'num', eff:'num',
                 case_temp_single_c:'num', case_temp_total_c:'num',
                 throttle_single_drop:'num', throttle_total_drop:'num',
@@ -658,10 +658,10 @@ function ytId(url){
 function reviewBtn(yt){
   if(!yt||yt==='#') return '';
   const id=ytId(yt);
-  return `<div class="yt-prev">
-    <a class="btn btn-yt" href="${yt}" target="_blank" rel="nofollow"><i class="ti ti-brand-youtube" style="font-size:13px"></i> Review</a>
+  return `<a class="yt-prev" href="${yt}" target="_blank" rel="nofollow">
     ${id?`<img class="yt-thumb" src="https://img.youtube.com/vi/${id}/mqdefault.jpg" alt="" loading="lazy">`:''}
-  </div>`;
+    <span class="btn btn-yt"><i class="ti ti-brand-youtube" style="font-size:13px"></i> Review</span>
+  </a>`;
 }
 function lnks(yt,buy){
   return `<div class="btns">
@@ -727,7 +727,13 @@ function renderCables(rows){
   b.innerHTML=rows.map(r=>{
     const exceeds=r.spd>r.adv_spd;
     return `<tr>
-    <td><div class="nm">${r.name}</div><div class="sub">${r.brand}</div></td>
+    <td>
+      <div class="nm">${r.name}</div>
+      <div class="sub" style="display:flex;gap:4px;margin-top:3px;flex-wrap:wrap;align-items:center">
+        ${r.brand}
+        ${r.display ? '<span class="tag">📺 Display</span>' : ''}
+      </div>
+    </td>
     <td><span class="chip">${r.conn}</span></td>
     <td class="num">${r.len>=1?r.len+' m':Math.round(r.len*100)+' cm'}</td>
     <td class="num ${rc(r.res)}">${r.res} mΩ</td>
@@ -770,6 +776,7 @@ function renderChargers(rows){
     <td class="num" style="line-height:1.6">
       <div>${r.pwr} W <span style="font-size:10px;font-weight:400;color:var(--text3)">/ port</span></div>
       <div class="sub">${r.total_pwr} W total</div>
+      ${r.pwr>=r.total_pwr?`<div style="font-size:10px;font-weight:600;color:var(--green)">★ full power solo</div>`:''}
     </td>
     <td class="num ${ec(r.eff)}">${r.eff}%</td>
     <td>${r.ports_reboot?`<span class="b bo"><i class="ti ti-alert-triangle" style="font-size:12px"></i> Resets ports</span>`:`<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Stable</span>`}</td>
