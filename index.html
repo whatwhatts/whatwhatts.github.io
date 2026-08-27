@@ -359,7 +359,7 @@ footer{border-top:1px solid var(--border);padding:1.5rem 0;font-size:11px;color:
     </select>
     <select id="f-powerbanks-qi" onchange="applyF('powerbanks')">
      <option value="">Wireless (Qi): any</option>
-     <option value="none">Wireless (Qi): нет</option>
+     <option value="none">Wireless (Qi): None</option>
      <option value="Qi2.0 (15W)">Qi2.0 (15W)</option>
      <option value="Qi2.2 (25W)">Qi2.2 (25W)</option>
     </select>
@@ -374,7 +374,7 @@ footer{border-top:1px solid var(--border);padding:1.5rem 0;font-size:11px;color:
      <thead><tr>
       <th onclick="srt('powerbanks',0)">Powerbank <span class="sa">↕</span></th>
       <th onclick="srt('powerbanks',1)">Rated <span class="sa">↕</span></th>
-      <th onclick="srt('powerbanks',2)">Efficiency & Capacity <span class="sa">↕</span> <i class="ti ti-info-circle" style="font-size:11px;opacity:.6" title="Rated = заявлено производителем · Measured = получено в тесте"></i></th>
+      <th onclick="srt('powerbanks',2)">Efficiency & Capacity <span class="sa">↕</span> <i class="ti ti-info-circle" style="font-size:11px;opacity:.6" title="Rated = manufacturer's claimed spec · Measured = obtained during testing"></i></th>
       <th onclick="srt('powerbanks',3)">Output Power <span class="sa">↕</span></th>
       <th>Recharge</th>
       <th onclick="srt('powerbanks',4)">Stress Test <span class="sa">↕</span></th>
@@ -612,14 +612,14 @@ function castRow(row, types){
 function loadSheet(name){
   return new Promise(resolve=>{
     if(!URLS[name] || URLS[name].startsWith('ВСТАВЬ')){
-      console.warn(`URL для "${name}" не задан — лист будет пустым`);
+      console.warn(`URL for "${name}" is not set — sheet will be empty`);
       resolve([]);
       return;
     }
     Papa.parse(URLS[name], {
       download:true, header:true, skipEmptyLines:true,
       complete: res => resolve(res.data.map(r=>castRow(r, TYPES[name]))),
-      error: err => { console.error(`Ошибка загрузки "${name}":`, err); resolve([]); }
+      error: err => { console.error(`Failed to load "${name}":`, err); resolve([]); }
     });
   });
 }
