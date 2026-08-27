@@ -351,6 +351,18 @@ footer{border-top:1px solid var(--border);padding:1.5rem 0;font-size:11px;color:
      <option value="yes">Display: Yes</option>
      <option value="no">Display: No</option>
     </select>
+    <select id="f-powerbanks-pt" onchange="applyF('powerbanks')">
+     <option value="">Pass-through: any</option>
+     <option value="Yes">Pass-through: Yes</option>
+     <option value="Limited">Pass-through: Limited</option>
+     <option value="No">Pass-through: No</option>
+    </select>
+    <select id="f-powerbanks-qi" onchange="applyF('powerbanks')">
+     <option value="">Wireless (Qi): any</option>
+     <option value="none">Wireless (Qi): нет</option>
+     <option value="Qi2.0 (15W)">Qi2.0 (15W)</option>
+     <option value="Qi2.2 (25W)">Qi2.2 (25W)</option>
+    </select>
     <select id="f-powerbanks-v" onchange="applyF('powerbanks')">
      <option value="">All verdicts</option>
      <option>Excellent</option><option>Good</option><option>Caution</option><option>Poor</option>
@@ -362,14 +374,13 @@ footer{border-top:1px solid var(--border);padding:1.5rem 0;font-size:11px;color:
      <thead><tr>
       <th onclick="srt('powerbanks',0)">Powerbank <span class="sa">↕</span></th>
       <th onclick="srt('powerbanks',1)">Rated <span class="sa">↕</span></th>
-      <th onclick="srt('powerbanks',2)">Real (Wh) <span class="sa">↕</span></th>
-      <th onclick="srt('powerbanks',3)">Eff. 5V <span class="sa">↕</span></th>
-      <th onclick="srt('powerbanks',4)">Eff. Max <span class="sa">↕</span></th>
-      <th onclick="srt('powerbanks',5)">Max Output <span class="sa">↕</span></th>
-      <th onclick="srt('powerbanks',6)">Recharge <span class="sa">↕</span></th>
-      <th onclick="srt('powerbanks',7)">Full-power Hold <span class="sa">↕</span></th>
+      <th onclick="srt('powerbanks',2)">Efficiency & Capacity <span class="sa">↕</span> <i class="ti ti-info-circle" style="font-size:11px;opacity:.6" title="Rated = заявлено производителем · Measured = получено в тесте"></i></th>
+      <th onclick="srt('powerbanks',3)">Output Power <span class="sa">↕</span></th>
+      <th>Recharge</th>
+      <th onclick="srt('powerbanks',4)">Stress Test <span class="sa">↕</span></th>
+      <th>Wireless (Qi)</th>
       <th>Pass-through</th>
-      <th onclick="srt('powerbanks',9)">Verdict <span class="sa">↕</span></th>
+      <th onclick="srt('powerbanks',5)">Verdict <span class="sa">↕</span></th>
       <th>Links</th>
      </tr></thead>
      <tbody id="body-powerbanks"></tbody>
@@ -579,7 +590,12 @@ const TYPES = {
                 display:'bool', cable_in:'bool', xiaomi_tc:'bool', ports_reboot:'bool',
                 throttle_single_pass:'bool', throttle_total_pass:'bool' },
   powerbanks: { rated:'num', rated_wh:'num', real:'num', eff5v:'num', eff_max:'num',
-                maxpwr:'num', hold:'num', cable:'bool', display:'bool' }
+                maxpwr:'num', total_pwr:'num',
+                case_temp_single_c:'num', case_temp_total_c:'num',
+                throttle_single_drop:'num', throttle_total_drop:'num',
+                qi_pwr:'num', qi_real_wh:'num', qi_eff:'num', qi_throttle_drop:'num',
+                cable:'bool', display:'bool', wireless_qi:'bool', xiaomi_tc:'bool',
+                throttle_single_pass:'bool', throttle_total_pass:'bool', qi_throttle_pass:'bool' }
 };
 
 function castRow(row, types){
@@ -696,6 +712,18 @@ function toggleBuy(e,btn){
   document.querySelectorAll('.buy-menu.show').forEach(m=>m.classList.remove('show'));
   if(!wasOpen) menu.classList.add('show');
 }
+function qiBtn(hasQi,standard,pwr,realWh,eff,pass,drop){
+  if(!hasQi) return '';
+  return `<div class="proto-drop">
+    <button class="tag proto-btn" onclick="toggleDrop(event,this,'proto-menu')">📶 Qi wireless</button>
+    <div class="proto-menu">
+      ${standard?`<div class="proto-item">Standard: ${standard}</div>`:''}
+      <div class="proto-item">Rated: ${pwr} W</div>
+      <div class="proto-item">Measured: ${realWh} Wh delivered (${eff}% eff.)</div>
+      <div class="proto-item">${pass?`<span class="b bg"><i class="ti ti-check" style="font-size:11px"></i> No throttling</span>`:`<span class="b br"><i class="ti ti-flame" style="font-size:11px"></i> Throttles → ${drop} W</span>`}</div>
+    </div>
+  </div>`;
+}
 function protoBtn(extra,xiaomiTC){
   const list=(extra||'').split(',').map(s=>s.trim()).filter(Boolean);
   if(!list.length&&!xiaomiTC) return '';
@@ -800,22 +828,37 @@ function renderPowerbanks(rows){
   b.innerHTML=rows.map(r=>`<tr>
     <td>
       <div class="nm">${r.name}</div>
-      <div class="sub" style="display:flex;gap:4px;margin-top:3px;flex-wrap:wrap">
-        ${r.display ? '<span class="tag">📺 Display</span>'       : ''}
-        ${r.cable   ? '<span class="tag">🔌 Built-in cable</span>': ''}
+      <div class="sub" style="display:flex;gap:4px;margin-top:3px;flex-wrap:wrap;align-items:center">
         <span class="tag">${r.pd}</span>
+        ${r.display     ? '<span class="tag">📺 Display</span>'       : ''}
+        ${r.cable       ? '<span class="tag">🔌 Built-in cable</span>': ''}
+        ${qiBtn(r.wireless_qi,r.qi_standard,r.qi_pwr,r.qi_real_wh,r.qi_eff,r.qi_throttle_pass,r.qi_throttle_drop)}
+        ${protoBtn(r.protocols_extra,r.xiaomi_tc)}
       </div>
     </td>
     <td class="num" style="line-height:1.6">
       ${r.rated.toLocaleString()} mAh<br>
-      <span style="font-size:11px;color:var(--text3)">${r.rated_wh} Wh rated</span>
+      <span style="font-size:11px;color:var(--text3)">${r.rated_wh} Wh <em style="font-style:normal;color:var(--text3)">rated</em></span>
     </td>
-    <td class="num">${r.real} Wh</td>
-    <td class="num ${ec(r.eff5v)}">${r.eff5v}%</td>
-    <td class="num ${ec(r.eff_max)}">${r.eff_max}%</td>
-    <td class="num">${r.maxpwr} W</td>
+    <td class="num" style="line-height:1.6">
+      <div>${r.real} Wh <span style="font-size:10px;font-weight:400;color:var(--text3)">measured</span></div>
+      <div class="sub"><span class="${ec(r.eff5v)}">${r.eff5v}%</span> @5V · <span class="${ec(r.eff_max)}">${r.eff_max}%</span> @max</div>
+      <div style="font-size:10px;color:var(--text3)">efficiency, measured</div>
+    </td>
+    <td class="num" style="line-height:1.6">
+      <div>${r.maxpwr} W <span style="font-size:10px;font-weight:400;color:var(--text3)">/ port</span></div>
+      <div class="sub">${r.total_pwr} W total</div>
+      ${r.maxpwr>=r.total_pwr?`<div style="font-size:10px;font-weight:600;color:var(--green)">★ full power solo</div>`:''}
+    </td>
     <td style="font-size:12px;color:var(--text2)">${r.recharge}</td>
-    <td style="font-size:12px;color:${r.hold===9999?'var(--green)':'var(--orange)'}">${r.holdlbl}</td>
+    <td>
+      <div class="sub" style="font-weight:600">Single port</div>
+      <div>${r.throttle_single_pass?`<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>`:`<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> → ${r.throttle_single_drop} W</span>`}</div>
+      <div class="sub">Case: <span class="${tc(r.case_temp_single_c)}">${r.case_temp_single_c}°C</span></div>
+      <div class="sub" style="font-weight:600;margin-top:6px">Total load</div>
+      <div>${r.throttle_total_pass?`<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>`:`<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> → ${r.throttle_total_drop} W</span>`}</div>
+      <div class="sub">Case: <span class="${tc(r.case_temp_total_c)}">${r.case_temp_total_c}°C</span></div>
+    </td>
     <td>${yn(r.pt==='Yes'?true:r.pt==='Limited'?r.pt:false)}</td>
     <td>${badge(r.v)}</td>
     <td>${lnks(r.yt,r.buy)}</td>
@@ -846,6 +889,8 @@ function applyF(name){
   const cap      = name==='powerbanks' ? document.getElementById('f-powerbanks-cap')?.value||''    : '';
   const pb_cable = name==='powerbanks' ? document.getElementById('f-powerbanks-cable')?.value||''  : '';
   const pb_disp  = name==='powerbanks' ? document.getElementById('f-powerbanks-display')?.value||'': '';
+  const pb_pt    = name==='powerbanks' ? document.getElementById('f-powerbanks-pt')?.value||''     : '';
+  const pb_qi    = name==='powerbanks' ? document.getElementById('f-powerbanks-qi')?.value||''     : '';
 
   let out=DATA[name].filter(r=>{
     const txt=Object.values(r).join(' ').toLowerCase();
@@ -883,6 +928,9 @@ function applyF(name){
     if(pb_cable==='no' && r.cable)   return false;
     if(pb_disp ==='yes'&&!r.display) return false;
     if(pb_disp ==='no' && r.display) return false;
+    if(pb_pt&&r.pt!==pb_pt)          return false;
+    if(pb_qi==='none'&&r.wireless_qi)                 return false;
+    if(pb_qi&&pb_qi!=='none'&&r.qi_standard!==pb_qi)  return false;
     return true;
   });
   if(S[name].col>=0)out=doSort(name,out);
@@ -898,7 +946,7 @@ function applyF(name){
 const COLS={
   cables:    ['name','conn','len','res','pwr','spd','stress_conn_c','v'],
   chargers:  ['name','pwr','eff','case_temp_total_c','v'],
-  powerbanks:['name','rated','real','eff5v','eff_max','maxpwr','recharge','hold','pt','v'],
+  powerbanks:['name','rated_wh','real','maxpwr','case_temp_total_c','v'],
 };
 
 function srt(name,col){
