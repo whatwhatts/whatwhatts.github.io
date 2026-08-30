@@ -134,6 +134,43 @@ td{padding:10px 13px;vertical-align:middle}
 .empty{text-align:center;padding:3rem;color:var(--text3);font-size:13px}
 .empty i{font-size:1.8rem;display:block;margin-bottom:.5rem;opacity:.3}
 
+/* ── Compare mode ── */
+.cmp-th,.cmp-td{display:none;width:34px}
+table.cmp-on .cmp-th,table.cmp-on .cmp-td{display:table-cell}
+.cmp-td{text-align:center}
+.cmp-chk{width:16px;height:16px;cursor:pointer;accent-color:var(--accent)}
+.cmp-chk:disabled{opacity:.3;cursor:not-allowed}
+.cmp-btn{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:6px 12px;border-radius:var(--r);border:1px solid var(--borders);background:var(--surface);color:var(--text2);cursor:pointer;transition:color .15s,border-color .15s,background .15s}
+.cmp-btn:hover{color:var(--text);border-color:var(--accent)}
+.cmp-btn.on{color:var(--accent);border-color:var(--blueb);background:var(--bluebg)}
+
+.cmp-bar{position:fixed;left:50%;bottom:22px;transform:translate(-50%,0);display:none;align-items:center;gap:14px;background:var(--surface2);border:1px solid var(--borders);border-radius:999px;padding:10px 12px 10px 20px;box-shadow:0 10px 30px rgba(0,0,0,.35);z-index:100}
+.cmp-bar.show{display:flex}
+.cmp-bar-txt{font-size:13px;color:var(--text);font-weight:500;white-space:nowrap}
+.cmp-bar-txt em{font-style:normal;color:var(--text3);font-weight:400}
+.cmp-bar-go{background:var(--accent);color:#0d1117;border:none;font-size:13px;font-weight:600;padding:8px 16px;border-radius:999px;cursor:pointer;white-space:nowrap;transition:opacity .15s}
+.cmp-bar-go:disabled{opacity:.35;cursor:not-allowed}
+.cmp-bar-go:not(:disabled):hover{opacity:.85}
+.cmp-bar-clear{background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:4px 6px}
+.cmp-bar-clear:hover{color:var(--text)}
+
+.cmp-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;padding:3vh 2vw;overflow-y:auto}
+.cmp-overlay.show{display:block}
+.cmp-modal{max-width:1100px;margin:0 auto;background:var(--bg);border:1px solid var(--borders);border-radius:var(--rl);overflow:hidden}
+.cmp-modal-hdr{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.4rem;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:2}
+.cmp-modal-title{font-size:15px;font-weight:600}
+.cmp-modal-close{width:30px;height:30px;border-radius:var(--r);border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:15px;transition:color .15s,border-color .15s}
+.cmp-modal-close:hover{color:var(--text);border-color:var(--borders)}
+.cmp-modal-body{padding:1.2rem 1.4rem 1.6rem;overflow-x:auto}
+.cmp-table{width:100%;border-collapse:collapse;font-size:13px;min-width:560px}
+.cmp-table th,.cmp-table td{padding:9px 12px;text-align:left;vertical-align:top;border-bottom:1px solid var(--border)}
+.cmp-table thead th{position:sticky;top:0;background:var(--bg);white-space:nowrap}
+.cmp-table .cmp-field{width:150px;color:var(--text3);font-size:11px;text-transform:uppercase;letter-spacing:.4px;font-weight:600;white-space:nowrap;background:var(--surface);position:sticky;left:0}
+.cmp-table .cmp-model-hdr{min-width:180px}
+.cmp-table .cmp-model-name{font-weight:600;font-size:13px}
+.cmp-table .cmp-model-brand{font-size:11px;color:var(--text3);margin-top:1px}
+.cmp-win{background:var(--gbg)!important;border-radius:var(--r)}
+
 /* ── Footer ── */
 footer{border-top:1px solid var(--border);padding:1.5rem 0;font-size:11px;color:var(--text3);line-height:1.8}
 .ftr{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap}
@@ -248,11 +285,13 @@ footer{border-top:1px solid var(--border);padding:1.5rem 0;font-size:11px;color:
      <option value="40">40 Gbps</option>
      <option value="80">80 Gbps</option>
     </select>
+    <button class="cmp-btn" id="cmpbtn-cables" onclick="toggleCompareMode('cables')"><i class="ti ti-arrows-diff"></i> Compare</button>
     <span class="lbl" id="lbl-cables">6 items</span>
    </div>
    <div class="tbl-wrap">
     <table id="tbl-cables">
      <thead><tr>
+      <th class="cmp-th"></th>
       <th onclick="srt('cables',0)">Cable <span class="sa">↕</span></th>
       <th onclick="srt('cables',1)">Type <span class="sa">↕</span></th>
       <th onclick="srt('cables',2)">Length <span class="sa">↕</span></th>
@@ -306,18 +345,21 @@ footer{border-top:1px solid var(--border);padding:1.5rem 0;font-size:11px;color:
      <option value="">All verdicts</option>
      <option>Excellent</option><option>Good</option><option>Caution</option><option>Poor</option>
     </select>
+    <button class="cmp-btn" id="cmpbtn-chargers" onclick="toggleCompareMode('chargers')"><i class="ti ti-arrows-diff"></i> Compare</button>
     <span class="lbl" id="lbl-chargers">4 items</span>
    </div>
    <div class="tbl-wrap">
     <table id="tbl-chargers">
      <thead><tr>
+      <th class="cmp-th"></th>
       <th onclick="srt('chargers',0)">Charger <span class="sa">↕</span></th>
       <th>Ports</th>
       <th onclick="srt('chargers',1)">Power <span class="sa">↕</span></th>
       <th onclick="srt('chargers',2)">Peak Efficiency <span class="sa">↕</span></th>
+      <th onclick="srt('chargers',3)">Ripple (peak) <span class="sa">↕</span></th>
       <th>Port Reset</th>
-      <th onclick="srt('chargers',3)">Stress Test <span class="sa">↕</span></th>
-      <th onclick="srt('chargers',4)">Verdict <span class="sa">↕</span></th>
+      <th onclick="srt('chargers',4)">Stress Test <span class="sa">↕</span></th>
+      <th onclick="srt('chargers',5)">Verdict <span class="sa">↕</span></th>
       <th>Nuances</th>
       <th>Links</th>
      </tr></thead>
@@ -367,16 +409,18 @@ footer{border-top:1px solid var(--border);padding:1.5rem 0;font-size:11px;color:
      <option value="">All verdicts</option>
      <option>Excellent</option><option>Good</option><option>Caution</option><option>Poor</option>
     </select>
+    <button class="cmp-btn" id="cmpbtn-powerbanks" onclick="toggleCompareMode('powerbanks')"><i class="ti ti-arrows-diff"></i> Compare</button>
     <span class="lbl" id="lbl-powerbanks">3 items</span>
    </div>
    <div class="tbl-wrap">
     <table id="tbl-powerbanks">
      <thead><tr>
+      <th class="cmp-th"></th>
       <th onclick="srt('powerbanks',0)">Powerbank <span class="sa">↕</span></th>
       <th onclick="srt('powerbanks',1)">Rated <span class="sa">↕</span></th>
       <th onclick="srt('powerbanks',2)">Efficiency & Capacity <span class="sa">↕</span> <i class="ti ti-info-circle" style="font-size:11px;opacity:.6" title="Rated = manufacturer's claimed spec · Measured = obtained during testing"></i></th>
       <th onclick="srt('powerbanks',3)">Output Power <span class="sa">↕</span></th>
-      <th>Recharge</th>
+      <th>Charging Input</th>
       <th onclick="srt('powerbanks',4)">Stress Test <span class="sa">↕</span></th>
       <th>Wireless (Qi)</th>
       <th>Pass-through</th>
@@ -543,6 +587,22 @@ footer{border-top:1px solid var(--border);padding:1.5rem 0;font-size:11px;color:
  </div>
 </footer>
 
+<div class="cmp-bar" id="cmp-bar">
+ <span class="cmp-bar-txt" id="cmp-bar-txt"><b>0</b> <em>selected — pick 2 to 4 to compare</em></span>
+ <button class="cmp-bar-clear" onclick="clearCmp()">Clear</button>
+ <button class="cmp-bar-go" id="cmp-bar-go" onclick="openCompareModal()" disabled>Compare →</button>
+</div>
+
+<div class="cmp-overlay" id="cmp-overlay" onclick="if(event.target===this)closeCompareModal()">
+ <div class="cmp-modal">
+  <div class="cmp-modal-hdr">
+   <div class="cmp-modal-title" id="cmp-modal-title">Compare</div>
+   <button class="cmp-modal-close" onclick="closeCompareModal()" aria-label="Close"><i class="ti ti-x"></i></button>
+  </div>
+  <div class="cmp-modal-body" id="cmp-modal-body"></div>
+ </div>
+</div>
+
 <script>
 // ══════════════════════════════════════════════
 //  THEME — light/dark switch, remembers choice
@@ -581,21 +641,23 @@ let DATA = { cables: [], chargers: [], powerbanks: [] };
 
 // какие поля нужно превратить из текста CSV в числа/булевы
 const TYPES = {
-  cables:     { len:'num', res:'num', pwr:'num', spd:'num', adv_spd:'num',
+  cables:     { len:'num', res:'num', pwr:'num', spd:'num', adv_spd:'num', price:'num',
                 stress_conn_c:'num', stress_cable_c:'num',
                 emark:'bool', stress_pass:'bool', display:'bool' },
-  chargers:   { ports_n:'num', pwr:'num', total_pwr:'num', eff:'num',
+  chargers:   { ports_n:'num', pwr:'num', total_pwr:'num', eff:'num', ripple:'num', price:'num',
                 case_temp_single_c:'num', case_temp_total_c:'num',
                 throttle_single_drop:'num', throttle_total_drop:'num',
                 display:'bool', cable_in:'bool', xiaomi_tc:'bool', ports_reboot:'bool',
                 throttle_single_pass:'bool', throttle_total_pass:'bool' },
-  powerbanks: { rated:'num', rated_wh:'num', real:'num', eff5v:'num', eff_max:'num',
-                maxpwr:'num', total_pwr:'num',
+  powerbanks: { rated:'num', rated_wh:'num', real:'num', eff5v:'num', eff_max:'num', price:'num',
+                maxpwr:'num', total_pwr:'num', max_charge_pwr:'num',
                 case_temp_single_c:'num', case_temp_total_c:'num',
                 throttle_single_drop:'num', throttle_total_drop:'num',
+                throttle_5v_drop:'num',
                 qi_pwr:'num', qi_real_wh:'num', qi_eff:'num', qi_throttle_drop:'num',
                 cable:'bool', display:'bool', wireless_qi:'bool', xiaomi_tc:'bool',
-                throttle_single_pass:'bool', throttle_total_pass:'bool', qi_throttle_pass:'bool' }
+                throttle_single_pass:'bool', throttle_total_pass:'bool', qi_throttle_pass:'bool',
+                throttle_5v_pass:'bool' }
 };
 
 function castRow(row, types){
@@ -679,9 +741,23 @@ function reviewBtn(yt){
     <span class="btn btn-yt"><i class="ti ti-brand-youtube" style="font-size:13px"></i> Review</span>
   </a>`;
 }
-function lnks(yt,buy){
+const valColor={'Great Value':'bg','Fair':'bo','Overpriced':'br'};
+const valIcon={'Great Value':'ti-thumb-up','Fair':'ti-minus','Overpriced':'ti-thumb-down'};
+function valueTag(v){
+  if(!v) return '';
+  return `<span class="b ${valColor[v]||'bx'}" style="margin-top:3px"><i class="ti ${valIcon[v]||'ti-minus'}" style="font-size:11px"></i> ${v}</span>`;
+}
+function priceTag(price){
+  if(!price) return '';
+  return `<span class="sub" style="font-size:10px" title="Price at time of review — check the Buy link for the current price">$${price} @ review</span>`;
+}
+function lnks(yt,buy,price,value){
   return `<div class="btns">
-    ${buy&&buy!='#'?`<a class="btn" href="${buy}" target="_blank" rel="nofollow sponsored"><i class="ti ti-shopping-cart" style="font-size:12px"></i> Buy</a>`:''}
+    <div style="display:flex;flex-direction:column;align-items:flex-start;gap:3px">
+      ${buy&&buy!='#'?`<a class="btn" href="${buy}" target="_blank" rel="nofollow sponsored"><i class="ti ti-shopping-cart" style="font-size:12px"></i> Buy</a>`:''}
+      ${priceTag(price)}
+      ${valueTag(value)}
+    </div>
     ${reviewBtn(yt)}
   </div>`;
 }
@@ -747,14 +823,173 @@ document.addEventListener('click',()=>{
 });
 
 // ══════════════════════════════════════════════
+//  COMPARE
+// ══════════════════════════════════════════════
+const CMP_MAX=4;
+const CMP={
+  cables:    {mode:false, sel:new Set()},
+  chargers:  {mode:false, sel:new Set()},
+  powerbanks:{mode:false, sel:new Set()},
+};
+let activeTab='cables';
+
+function toggleCompareMode(name){
+  const c=CMP[name];
+  c.mode=!c.mode;
+  if(!c.mode) c.sel.clear();
+  document.getElementById('tbl-'+name).classList.toggle('cmp-on',c.mode);
+  document.getElementById('cmpbtn-'+name).classList.toggle('on',c.mode);
+  render(name, S[name].sorted||DATA[name]);
+  updateCmpBar();
+}
+
+function wireCmpCheckboxes(name,tbody,rows){
+  tbody.querySelectorAll('.cmp-td .cmp-chk').forEach((cb,i)=>{
+    cb.addEventListener('change',()=>toggleCmp(name,rows[i].name,cb));
+  });
+}
+
+function toggleCmp(name,key,cb){
+  const c=CMP[name];
+  if(cb.checked){
+    if(c.sel.size>=CMP_MAX){ cb.checked=false; return; }
+    c.sel.add(key);
+  } else {
+    c.sel.delete(key);
+  }
+  // включаем/выключаем оставшиеся чекбоксы в зависимости от лимита
+  document.querySelectorAll(`#tbl-${name} .cmp-chk`).forEach(el=>{
+    if(!el.checked) el.disabled=c.sel.size>=CMP_MAX;
+  });
+  updateCmpBar();
+}
+
+function clearCmp(){
+  const c=CMP[activeTab];
+  c.sel.clear();
+  render(activeTab, S[activeTab].sorted||DATA[activeTab]);
+  updateCmpBar();
+}
+
+function updateCmpBar(){
+  const bar=document.getElementById('cmp-bar');
+  const c=CMP[activeTab];
+  const n=c.sel.size;
+  if(!c.mode || n===0){ bar.classList.remove('show'); return; }
+  bar.classList.add('show');
+  const txt=document.getElementById('cmp-bar-txt');
+  txt.innerHTML = n<2
+    ? `<b>${n}</b> <em>selected — pick at least 2 to compare</em>`
+    : `<b>${n}</b> <em>of ${CMP_MAX} selected</em>`;
+  document.getElementById('cmp-bar-go').disabled = n<2;
+}
+
+// ── Какие поля показывать в сравнении для каждой категории ──
+function stressCellCables(r){
+  return `${r.stress_pass?'<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>':'<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> Throttled</span>'}
+    <div class="sub" style="margin-top:4px">Conn <span class="${tc(r.stress_conn_c)}">${r.stress_conn_c}°C</span> · Cable <span class="${tc(r.stress_cable_c)}">${r.stress_cable_c}°C</span></div>`;
+}
+function stressCellChargers(r){
+  return `<div class="sub" style="font-weight:600">Single port</div>
+    <div>${r.throttle_single_pass?'<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>':`<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> → ${r.throttle_single_drop} W</span>`}</div>
+    <div class="sub">Case: <span class="${tc(r.case_temp_single_c)}">${r.case_temp_single_c}°C</span></div>
+    <div class="sub" style="font-weight:600;margin-top:6px">Total load</div>
+    <div>${r.throttle_total_pass?'<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>':`<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> → ${r.throttle_total_drop} W</span>`}</div>
+    <div class="sub">Case: <span class="${tc(r.case_temp_total_c)}">${r.case_temp_total_c}°C</span></div>`;
+}
+function stressCellPowerbanks(r){
+  return `<div class="sub" style="font-weight:600">5V discharge</div>
+    <div>${r.throttle_5v_pass?'<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>':`<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> → ${r.throttle_5v_drop} W</span>`}</div>
+    <div class="sub" style="font-weight:600;margin-top:6px">Single port</div>
+    <div>${r.throttle_single_pass?'<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>':`<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> → ${r.throttle_single_drop} W</span>`}</div>
+    <div class="sub">Case: <span class="${tc(r.case_temp_single_c)}">${r.case_temp_single_c}°C</span></div>
+    <div class="sub" style="font-weight:600;margin-top:6px">Total load</div>
+    <div>${r.throttle_total_pass?'<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>':`<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> → ${r.throttle_total_drop} W</span>`}</div>
+    <div class="sub">Case: <span class="${tc(r.case_temp_total_c)}">${r.case_temp_total_c}°C</span></div>`;
+}
+
+// win: необязательная функция (arr rows)->key лучшего значения, для подсветки победителя в строке
+const CMP_FIELDS={
+  cables:[
+    {label:'Connector',      get:r=>`<span class="chip">${r.conn}</span>`},
+    {label:'Length',         get:r=>`<span class="num">${r.len>=1?r.len+' m':Math.round(r.len*100)+' cm'}</span>`},
+    {label:'Resistance',     get:r=>`<span class="num ${rc(r.res)}">${r.res} mΩ</span>`, win:rows=>rows.reduce((a,b)=>b.res<a.res?b:a).name},
+    {label:'Max Power',      get:r=>`<span class="num">${r.pwr} W</span>`,               win:rows=>rows.reduce((a,b)=>b.pwr>a.pwr?b:a).name},
+    {label:'Speed',          get:r=>`${r.spd_lbl}${r.spd>r.adv_spd?`<div style="font-size:11px;font-weight:600;color:var(--green)">↑ real: ${r.real_spd}</div>`:''}`, win:rows=>rows.reduce((a,b)=>b.spd>a.spd?b:a).name},
+    {label:'E-Marker',       get:r=>yn(r.emark)},
+    {label:'Display',        get:r=>yn(r.display)},
+    {label:'Stress Test',    get:stressCellCables},
+    {label:'Price',          get:r=>r.price?`$${r.price} @ review ${valueTag(r.value)}`:'—', win:rows=>rows.filter(r=>r.price).length?rows.filter(r=>r.price).reduce((a,b)=>b.price<a.price?b:a).name:null},
+    {label:'Verdict',        get:r=>badge(r.v)},
+    {label:'Notes',          get:r=>r.extra||'—'},
+  ],
+  chargers:[
+    {label:'Ports',          get:r=>`<span class="chip">${r.ports}</span>`},
+    {label:'Power',          get:r=>`<div>${r.pwr} W <span style="font-size:10px;color:var(--text3)">/ port</span></div><div class="sub">${r.total_pwr} W total</div>${r.pwr>=r.total_pwr?'<div style="font-size:10px;font-weight:600;color:var(--green)">★ full power solo</div>':''}`, win:rows=>rows.reduce((a,b)=>b.total_pwr>a.total_pwr?b:a).name},
+    {label:'Peak Efficiency',get:r=>`<span class="num ${ec(r.eff)}">${r.eff}%</span>`, win:rows=>rows.reduce((a,b)=>b.eff>a.eff?b:a).name},
+    {label:'Ripple (peak)',  get:r=>`<span class="num ${r.ripple<=30?'vg':r.ripple<=60?'vo':'vr'}">${r.ripple} mV</span>`, win:rows=>rows.reduce((a,b)=>b.ripple<a.ripple?b:a).name},
+    {label:'Port Reset',     get:r=>r.ports_reboot?'<span class="b bo"><i class="ti ti-alert-triangle" style="font-size:12px"></i> Resets ports</span>':'<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Stable</span>'},
+    {label:'Protocols',      get:r=>`<span class="tag">${r.pd}</span> ${(r.protocols_extra||'').split(',').map(s=>s.trim()).filter(Boolean).map(s=>`<span class="tag">${s}</span>`).join(' ')}${r.xiaomi_tc?'<span class="tag">Xiaomi Turbo Charge</span>':''}`},
+    {label:'Display',        get:r=>yn(r.display)},
+    {label:'Built-in Cable', get:r=>yn(r.cable_in)},
+    {label:'Stress Test',    get:stressCellChargers},
+    {label:'Price',          get:r=>r.price?`$${r.price} @ review ${valueTag(r.value)}`:'—', win:rows=>rows.filter(r=>r.price).length?rows.filter(r=>r.price).reduce((a,b)=>b.price<a.price?b:a).name:null},
+    {label:'Verdict',        get:r=>badge(r.v)},
+    {label:'Notes',          get:r=>r.extra||'—'},
+  ],
+  powerbanks:[
+    {label:'Rated Capacity', get:r=>`${r.rated.toLocaleString()} mAh<div class="sub">${r.rated_wh} Wh rated</div>`, win:rows=>rows.reduce((a,b)=>b.rated_wh>a.rated_wh?b:a).name},
+    {label:'Measured',       get:r=>`${r.real} Wh <span style="font-size:10px;color:var(--text3)">measured</span><div class="sub"><span class="${ec(r.eff5v)}">${r.eff5v}%</span> @5V · <span class="${ec(r.eff_max)}">${r.eff_max}%</span> @max</div>`, win:rows=>rows.reduce((a,b)=>b.real>a.real?b:a).name},
+    {label:'Output Power',   get:r=>`<div>${r.maxpwr} W <span style="font-size:10px;color:var(--text3)">/ port</span></div><div class="sub">${r.total_pwr} W total</div>${r.maxpwr>=r.total_pwr?'<div style="font-size:10px;font-weight:600;color:var(--green)">★ full power solo</div>':''}`, win:rows=>rows.reduce((a,b)=>b.total_pwr>a.total_pwr?b:a).name},
+    {label:'Charging Input', get:r=>`${r.max_charge_pwr} W input<div class="sub">${r.recharge}</div>`, win:rows=>rows.reduce((a,b)=>b.max_charge_pwr>a.max_charge_pwr?b:a).name},
+    {label:'Stress Test',    get:stressCellPowerbanks},
+    {label:'Wireless (Qi)',  get:r=>r.wireless_qi?`${r.qi_standard||'Qi'}<div class="sub">${r.qi_pwr} W rated · ${r.qi_real_wh} Wh @ ${r.qi_eff}%</div>`:yn(false)},
+    {label:'Pass-through',   get:r=>yn(r.pt==='Yes'?true:r.pt==='Limited'?r.pt:false)},
+    {label:'Protocols',      get:r=>`<span class="tag">${r.pd}</span> ${(r.protocols_extra||'').split(',').map(s=>s.trim()).filter(Boolean).map(s=>`<span class="tag">${s}</span>`).join(' ')}${r.xiaomi_tc?'<span class="tag">Xiaomi Turbo Charge</span>':''}`},
+    {label:'Display',        get:r=>yn(r.display)},
+    {label:'Built-in Cable', get:r=>yn(r.cable)},
+    {label:'Price',          get:r=>r.price?`$${r.price} @ review ${valueTag(r.value)}`:'—', win:rows=>rows.filter(r=>r.price).length?rows.filter(r=>r.price).reduce((a,b)=>b.price<a.price?b:a).name:null},
+    {label:'Verdict',        get:r=>badge(r.v)},
+  ],
+};
+
+function openCompareModal(){
+  const name=activeTab;
+  const c=CMP[name];
+  if(c.sel.size<2) return;
+  const rows=(DATA[name]||[]).filter(r=>c.sel.has(r.name));
+  const fields=CMP_FIELDS[name];
+  document.getElementById('cmp-modal-title').textContent=`Comparing ${rows.length} ${name}`;
+  let html=`<table class="cmp-table"><thead><tr><th class="cmp-field"></th>`;
+  html+=rows.map(r=>`<th class="cmp-model-hdr"><div class="cmp-model-name">${r.name}</div><div class="cmp-model-brand">${r.brand}</div></th>`).join('');
+  html+=`</tr></thead><tbody>`;
+  fields.forEach(f=>{
+    const winner=f.win?f.win(rows):null;
+    html+=`<tr><td class="cmp-field">${f.label}</td>`;
+    html+=rows.map(r=>`<td class="${winner&&winner===r.name?'cmp-win':''}">${f.get(r)}</td>`).join('');
+    html+=`</tr>`;
+  });
+  html+=`</tbody></table>`;
+  document.getElementById('cmp-modal-body').innerHTML=html;
+  document.getElementById('cmp-overlay').classList.add('show');
+}
+function closeCompareModal(){
+  document.getElementById('cmp-overlay').classList.remove('show');
+}
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape') closeCompareModal();
+});
+
+// ══════════════════════════════════════════════
 //  RENDER
 // ══════════════════════════════════════════════
 function renderCables(rows){
   const b=document.getElementById('body-cables');
-  if(!rows.length){b.innerHTML=`<tr><td colspan="11"><div class="empty"><i class="ti ti-search"></i>No results found</div></td></tr>`;return;}
+  if(!rows.length){b.innerHTML=`<tr><td colspan="12"><div class="empty"><i class="ti ti-search"></i>No results found</div></td></tr>`;return;}
   b.innerHTML=rows.map(r=>{
     const exceeds=r.spd>r.adv_spd;
     return `<tr>
+    <td class="cmp-td"><input type="checkbox" class="cmp-chk" ${CMP.cables.sel.has(r.name)?'checked':''} ${(!CMP.cables.sel.has(r.name)&&CMP.cables.sel.size>=CMP_MAX)?'disabled':''}></td>
     <td>
       <div class="nm">${r.name}</div>
       <div class="sub" style="display:flex;gap:4px;margin-top:3px;flex-wrap:wrap;align-items:center">
@@ -780,17 +1015,23 @@ function renderCables(rows){
     <td style="font-size:11px;color:var(--text2);max-width:180px;line-height:1.5">${r.extra||'—'}</td>
     <td>
       <div class="btns">
-        ${buyBtn(r.buy_am,r.buy_ali)}
+        <div style="display:flex;flex-direction:column;align-items:flex-start;gap:3px">
+          ${buyBtn(r.buy_am,r.buy_ali)}
+          ${priceTag(r.price)}
+          ${valueTag(r.value)}
+        </div>
         ${reviewBtn(r.yt)}
       </div>
     </td>
   </tr>`;}).join('');
+  wireCmpCheckboxes('cables',b,rows);
 }
 
 function renderChargers(rows){
   const b=document.getElementById('body-chargers');
-  if(!rows.length){b.innerHTML=`<tr><td colspan="9"><div class="empty"><i class="ti ti-search"></i>No results found</div></td></tr>`;return;}
+  if(!rows.length){b.innerHTML=`<tr><td colspan="10"><div class="empty"><i class="ti ti-search"></i>No results found</div></td></tr>`;return;}
   b.innerHTML=rows.map(r=>`<tr>
+    <td class="cmp-td"><input type="checkbox" class="cmp-chk" ${CMP.chargers.sel.has(r.name)?'checked':''} ${(!CMP.chargers.sel.has(r.name)&&CMP.chargers.sel.size>=CMP_MAX)?'disabled':''}></td>
     <td>
       <div class="nm">${r.name}</div>
       <div class="sub" style="display:flex;gap:4px;margin-top:3px;flex-wrap:wrap;align-items:center">
@@ -807,6 +1048,7 @@ function renderChargers(rows){
       ${r.pwr>=r.total_pwr?`<div style="font-size:10px;font-weight:600;color:var(--green)">★ full power solo</div>`:''}
     </td>
     <td class="num ${ec(r.eff)}">${r.eff}%</td>
+    <td class="num ${r.ripple<=30?'vg':r.ripple<=60?'vo':'vr'}">${r.ripple} mV</td>
     <td>${r.ports_reboot?`<span class="b bo"><i class="ti ti-alert-triangle" style="font-size:12px"></i> Resets ports</span>`:`<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Stable</span>`}</td>
     <td>
       <div class="sub" style="font-weight:600">Single port</div>
@@ -818,14 +1060,16 @@ function renderChargers(rows){
     </td>
     <td>${badge(r.v)}</td>
     <td style="font-size:11px;color:var(--text2);max-width:180px;line-height:1.5">${r.extra||'—'}</td>
-    <td>${lnks(r.yt,r.buy)}</td>
+    <td>${lnks(r.yt,r.buy,r.price,r.value)}</td>
   </tr>`).join('');
+  wireCmpCheckboxes('chargers',b,rows);
 }
 
 function renderPowerbanks(rows){
   const b=document.getElementById('body-powerbanks');
-  if(!rows.length){b.innerHTML=`<tr><td colspan="9"><div class="empty"><i class="ti ti-search"></i>No results found</div></td></tr>`;return;}
+  if(!rows.length){b.innerHTML=`<tr><td colspan="10"><div class="empty"><i class="ti ti-search"></i>No results found</div></td></tr>`;return;}
   b.innerHTML=rows.map(r=>`<tr>
+    <td class="cmp-td"><input type="checkbox" class="cmp-chk" ${CMP.powerbanks.sel.has(r.name)?'checked':''} ${(!CMP.powerbanks.sel.has(r.name)&&CMP.powerbanks.sel.size>=CMP_MAX)?'disabled':''}></td>
     <td>
       <div class="nm">${r.name}</div>
       <div class="sub" style="display:flex;gap:4px;margin-top:3px;flex-wrap:wrap;align-items:center">
@@ -850,9 +1094,14 @@ function renderPowerbanks(rows){
       <div class="sub">${r.total_pwr} W total</div>
       ${r.maxpwr>=r.total_pwr?`<div style="font-size:10px;font-weight:600;color:var(--green)">★ full power solo</div>`:''}
     </td>
-    <td style="font-size:12px;color:var(--text2)">${r.recharge}</td>
+    <td style="font-size:12px;color:var(--text2);line-height:1.6">
+      <div class="num" style="font-size:13px">${r.max_charge_pwr} W <span style="font-size:10px;font-weight:400;color:var(--text3)">input</span></div>
+      <div class="sub">${r.recharge}</div>
+    </td>
     <td>
-      <div class="sub" style="font-weight:600">Single port</div>
+      <div class="sub" style="font-weight:600">5V discharge</div>
+      <div>${r.throttle_5v_pass?`<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>`:`<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> → ${r.throttle_5v_drop} W</span>`}</div>
+      <div class="sub" style="font-weight:600;margin-top:6px">Single port</div>
       <div>${r.throttle_single_pass?`<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>`:`<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> → ${r.throttle_single_drop} W</span>`}</div>
       <div class="sub">Case: <span class="${tc(r.case_temp_single_c)}">${r.case_temp_single_c}°C</span></div>
       <div class="sub" style="font-weight:600;margin-top:6px">Total load</div>
@@ -861,8 +1110,9 @@ function renderPowerbanks(rows){
     </td>
     <td>${yn(r.pt==='Yes'?true:r.pt==='Limited'?r.pt:false)}</td>
     <td>${badge(r.v)}</td>
-    <td>${lnks(r.yt,r.buy)}</td>
+    <td>${lnks(r.yt,r.buy,r.price,r.value)}</td>
   </tr>`).join('');
+  wireCmpCheckboxes('powerbanks',b,rows);
 }
 
 function render(name,rows){
@@ -945,7 +1195,7 @@ function applyF(name){
 // ══════════════════════════════════════════════
 const COLS={
   cables:    ['name','conn','len','res','pwr','spd','stress_conn_c','v'],
-  chargers:  ['name','pwr','eff','case_temp_total_c','v'],
+  chargers:  ['name','pwr','eff','ripple','case_temp_total_c','v'],
   powerbanks:['name','rated_wh','real','maxpwr','case_temp_total_c','v'],
 };
 
@@ -985,6 +1235,8 @@ function sw(name,btn){
   // скрываем affiliate notice для нетабличных вкладок
   const notice=document.querySelector('.affiliate-note');
   if(notice) notice.style.display=(name==='gear'||name==='support')?'none':'flex';
+  if(CMP[name]){ activeTab=name; updateCmpBar(); }
+  else { document.getElementById('cmp-bar').classList.remove('show'); }
 }
 
 // ══════════════════════════════════════════════
