@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WhatWatts — USB Testing Database</title>
 <meta name="description" content="Real-world USB cable, charger and powerbank tests. Actual measurements, not marketing specs.">
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="48x48" href="favicon-48x48.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="android-chrome-192x192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="android-chrome-512x512.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.29.0/dist/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <style>
@@ -191,6 +198,10 @@ footer{border-top:1px solid var(--border);padding:1.5rem 0;font-size:11px;color:
 .card-sub{font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:.8rem}
 .card-tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:.9rem}
 .tag{font-size:10px;padding:2px 7px;border-radius:999px;background:var(--surface2);border:1px solid var(--border);color:var(--text3)}
+.price-cell{display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.price-val{font-size:15px;font-weight:700;color:var(--accent);display:flex;align-items:center;gap:5px}
+.price-info{font-size:11px;color:var(--text3);cursor:help;opacity:.7}
+.price-info:hover{opacity:1}
 .card-link{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:500;color:var(--accent);border:1px solid var(--blueb);border-radius:var(--r);padding:5px 10px;background:var(--bluebg);transition:opacity .15s}
 .card-link:hover{opacity:.8}
 
@@ -301,6 +312,7 @@ footer{border-top:1px solid var(--border);padding:1.5rem 0;font-size:11px;color:
       <th>E-Marker</th>
       <th onclick="srt('cables',6)">Stress Test <span class="sa">↕</span></th>
       <th onclick="srt('cables',7)">Verdict <span class="sa">↕</span></th>
+      <th onclick="srt('cables',8)">Price <span class="sa">↕</span></th>
       <th>Additional Info</th>
       <th>Links</th>
      </tr></thead>
@@ -360,6 +372,7 @@ footer{border-top:1px solid var(--border);padding:1.5rem 0;font-size:11px;color:
       <th>Port Reset</th>
       <th onclick="srt('chargers',4)">Stress Test <span class="sa">↕</span></th>
       <th onclick="srt('chargers',5)">Verdict <span class="sa">↕</span></th>
+      <th onclick="srt('chargers',6)">Price <span class="sa">↕</span></th>
       <th>Nuances</th>
       <th>Links</th>
      </tr></thead>
@@ -425,6 +438,7 @@ footer{border-top:1px solid var(--border);padding:1.5rem 0;font-size:11px;color:
       <th>Wireless (Qi)</th>
       <th>Pass-through</th>
       <th onclick="srt('powerbanks',5)">Verdict <span class="sa">↕</span></th>
+      <th onclick="srt('powerbanks',6)">Price <span class="sa">↕</span></th>
       <th>Links</th>
      </tr></thead>
      <tbody id="body-powerbanks"></tbody>
@@ -580,7 +594,7 @@ footer{border-top:1px solid var(--border);padding:1.5rem 0;font-size:11px;color:
   <div class="ftr">
    <div>
     <div>© 2025 WhatWatts · Independent USB Testing Database</div>
-    <div>As an Amazon Associate I earn from qualifying purchases. All measurements are independently tested with Power-Z, WITRN, FNB58, oscilloscope and thermal camera.</div>
+    <div>As an Amazon Associate I earn from qualifying purchases. All measurements are independently tested with Power-Z, WITRN, FNB58, oscilloscope and thermal camera. Prices reflect the cost at time of testing and may have changed since — check the Buy link for current pricing.</div>
    </div>
    <div><a href="https://youtube.com/@WhatWatts" target="_blank" rel="noopener" style="color:var(--text3)">YouTube →</a></div>
   </div>
@@ -747,17 +761,16 @@ function valueTag(v){
   if(!v) return '';
   return `<span class="b ${valColor[v]||'bx'}" style="margin-top:3px"><i class="ti ${valIcon[v]||'ti-minus'}" style="font-size:11px"></i> ${v}</span>`;
 }
-function priceTag(price){
-  if(!price) return '';
-  return `<span class="sub" style="font-size:10px" title="Price at time of review — check the Buy link for the current price">$${price} @ review</span>`;
+function priceCell(price,value){
+  if(!price) return `<span class="sub">—</span>`;
+  return `<div class="price-cell">
+    <div class="price-val">$${price}<i class="ti ti-info-circle price-info" title="Price at time of review — check the Buy link for the current price"></i></div>
+    ${valueTag(value)}
+  </div>`;
 }
-function lnks(yt,buy,price,value){
+function lnks(yt,buy){
   return `<div class="btns">
-    <div style="display:flex;flex-direction:column;align-items:flex-start;gap:3px">
-      ${buy&&buy!='#'?`<a class="btn" href="${buy}" target="_blank" rel="nofollow sponsored"><i class="ti ti-shopping-cart" style="font-size:12px"></i> Buy</a>`:''}
-      ${priceTag(price)}
-      ${valueTag(value)}
-    </div>
+    ${buy&&buy!='#'?`<a class="btn" href="${buy}" target="_blank" rel="nofollow sponsored"><i class="ti ti-shopping-cart" style="font-size:12px"></i> Buy</a>`:''}
     ${reviewBtn(yt)}
   </div>`;
 }
@@ -985,7 +998,7 @@ document.addEventListener('keydown',e=>{
 // ══════════════════════════════════════════════
 function renderCables(rows){
   const b=document.getElementById('body-cables');
-  if(!rows.length){b.innerHTML=`<tr><td colspan="12"><div class="empty"><i class="ti ti-search"></i>No results found</div></td></tr>`;return;}
+  if(!rows.length){b.innerHTML=`<tr><td colspan="13"><div class="empty"><i class="ti ti-search"></i>No results found</div></td></tr>`;return;}
   b.innerHTML=rows.map(r=>{
     const exceeds=r.spd>r.adv_spd;
     return `<tr>
@@ -1012,14 +1025,11 @@ function renderCables(rows){
       <div class="sub">Conn <span class="${tc(r.stress_conn_c)}">${r.stress_conn_c}°C</span> · Cable <span class="${tc(r.stress_cable_c)}">${r.stress_cable_c}°C</span></div>
     </td>
     <td>${badge(r.v)}</td>
+    <td>${priceCell(r.price,r.value)}</td>
     <td style="font-size:11px;color:var(--text2);max-width:180px;line-height:1.5">${r.extra||'—'}</td>
     <td>
       <div class="btns">
-        <div style="display:flex;flex-direction:column;align-items:flex-start;gap:3px">
-          ${buyBtn(r.buy_am,r.buy_ali)}
-          ${priceTag(r.price)}
-          ${valueTag(r.value)}
-        </div>
+        ${buyBtn(r.buy_am,r.buy_ali)}
         ${reviewBtn(r.yt)}
       </div>
     </td>
@@ -1029,7 +1039,7 @@ function renderCables(rows){
 
 function renderChargers(rows){
   const b=document.getElementById('body-chargers');
-  if(!rows.length){b.innerHTML=`<tr><td colspan="10"><div class="empty"><i class="ti ti-search"></i>No results found</div></td></tr>`;return;}
+  if(!rows.length){b.innerHTML=`<tr><td colspan="11"><div class="empty"><i class="ti ti-search"></i>No results found</div></td></tr>`;return;}
   b.innerHTML=rows.map(r=>`<tr>
     <td class="cmp-td"><input type="checkbox" class="cmp-chk" ${CMP.chargers.sel.has(r.name)?'checked':''} ${(!CMP.chargers.sel.has(r.name)&&CMP.chargers.sel.size>=CMP_MAX)?'disabled':''}></td>
     <td>
@@ -1059,15 +1069,16 @@ function renderChargers(rows){
       <div class="sub">Case: <span class="${tc(r.case_temp_total_c)}">${r.case_temp_total_c}°C</span></div>
     </td>
     <td>${badge(r.v)}</td>
+    <td>${priceCell(r.price,r.value)}</td>
     <td style="font-size:11px;color:var(--text2);max-width:180px;line-height:1.5">${r.extra||'—'}</td>
-    <td>${lnks(r.yt,r.buy,r.price,r.value)}</td>
+    <td>${lnks(r.yt,r.buy)}</td>
   </tr>`).join('');
   wireCmpCheckboxes('chargers',b,rows);
 }
 
 function renderPowerbanks(rows){
   const b=document.getElementById('body-powerbanks');
-  if(!rows.length){b.innerHTML=`<tr><td colspan="10"><div class="empty"><i class="ti ti-search"></i>No results found</div></td></tr>`;return;}
+  if(!rows.length){b.innerHTML=`<tr><td colspan="11"><div class="empty"><i class="ti ti-search"></i>No results found</div></td></tr>`;return;}
   b.innerHTML=rows.map(r=>`<tr>
     <td class="cmp-td"><input type="checkbox" class="cmp-chk" ${CMP.powerbanks.sel.has(r.name)?'checked':''} ${(!CMP.powerbanks.sel.has(r.name)&&CMP.powerbanks.sel.size>=CMP_MAX)?'disabled':''}></td>
     <td>
@@ -1110,7 +1121,8 @@ function renderPowerbanks(rows){
     </td>
     <td>${yn(r.pt==='Yes'?true:r.pt==='Limited'?r.pt:false)}</td>
     <td>${badge(r.v)}</td>
-    <td>${lnks(r.yt,r.buy,r.price,r.value)}</td>
+    <td>${priceCell(r.price,r.value)}</td>
+    <td>${lnks(r.yt,r.buy)}</td>
   </tr>`).join('');
   wireCmpCheckboxes('powerbanks',b,rows);
 }
@@ -1194,9 +1206,9 @@ function applyF(name){
 //  SORT
 // ══════════════════════════════════════════════
 const COLS={
-  cables:    ['name','conn','len','res','pwr','spd','stress_conn_c','v'],
-  chargers:  ['name','pwr','eff','ripple','case_temp_total_c','v'],
-  powerbanks:['name','rated_wh','real','maxpwr','case_temp_total_c','v'],
+  cables:    ['name','conn','len','res','pwr','spd','stress_conn_c','v','price'],
+  chargers:  ['name','pwr','eff','ripple','case_temp_total_c','v','price'],
+  powerbanks:['name','rated_wh','real','maxpwr','case_temp_total_c','v','price'],
 };
 
 function srt(name,col){
