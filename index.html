@@ -218,6 +218,7 @@ footer{border-top:1px solid var(--border);padding:1.5rem 0;font-size:11px;color:
 .btn-blue{background:var(--accent);color:#0d1117;border:none}
 .btn-green{background:var(--green);color:#0d1117;border:none}
 .btn-gray{background:var(--surface2);color:var(--text);border:1px solid var(--borders)}
+.btn-red{background:#dc2626;color:#fff;border:1px solid #dc2626}
 .support-note{font-size:12px;color:var(--text3);line-height:1.8;padding:1rem 1.2rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--rl)}
 
 /* ── Responsive ── */
@@ -563,7 +564,7 @@ footer{border-top:1px solid var(--border);padding:1.5rem 0;font-size:11px;color:
       <div class="icon">▶️</div>
       <div class="s-title">Subscribe on YouTube</div>
       <div class="s-desc">Completely free — and the single most impactful thing you can do. Every subscriber helps the algorithm push the channel further.</div>
-      <a class="s-btn btn-gray" href="https://www.youtube.com/@What_Watts" target="_blank" rel="noopener"><i class="ti ti-brand-youtube"></i> Subscribe</a>
+      <a class="s-btn btn-red" href="https://www.youtube.com/@What_Watts" target="_blank" rel="noopener"><i class="ti ti-brand-youtube"></i> Subscribe</a>
      </div>
 
      <div class="support-card">
@@ -593,7 +594,7 @@ footer{border-top:1px solid var(--border);padding:1.5rem 0;font-size:11px;color:
  <div class="wrap">
   <div class="ftr">
    <div>
-    <div>© 2025 WhatWatts · Independent USB Testing Database</div>
+    <div>© <span id="cur-year"></span> WhatWatts · Independent USB Testing Database</div>
     <div>As an Amazon Associate I earn from qualifying purchases. All measurements are independently tested with Power-Z, WITRN, FNB58, oscilloscope and thermal camera. Prices reflect the cost at time of testing and may have changed since — check the Buy link for current pricing.</div>
    </div>
    <div><a href="https://www.youtube.com/@What_Watts" target="_blank" rel="noopener" style="color:var(--text3)">YouTube →</a></div>
@@ -618,6 +619,8 @@ footer{border-top:1px solid var(--border);padding:1.5rem 0;font-size:11px;color:
 </div>
 
 <script>
+document.getElementById('cur-year').textContent = new Date().getFullYear();
+
 // ══════════════════════════════════════════════
 //  THEME — light/dark switch, remembers choice
 // ══════════════════════════════════════════════
