@@ -373,7 +373,7 @@ footer{border-top:1px solid var(--border);padding:1.5rem 0;font-size:11px;color:
       <th onclick="srt('chargers',0)">Charger <span class="sa">↕</span></th>
       <th>Ports</th>
       <th onclick="srt('chargers',1)">Power <span class="sa">↕</span></th>
-      <th onclick="srt('chargers',2)">Peak Efficiency <span class="sa">↕</span> <i class="ti ti-info-circle info-icon" data-info="The small bar chart shows efficiency at each tested voltage step, from lowest (left) to highest (right) — taller & greener means more efficient. Tap the chart to see exact numbers." onclick="event.stopPropagation();showInfoPopover(this)"></i></th>
+      <th onclick="srt('chargers',2)">Peak Efficiency <span class="sa">↕</span></th>
       <th onclick="srt('chargers',3)">Ripple (peak) <span class="sa">↕</span></th>
       <th>Port Reset</th>
       <th onclick="srt('chargers',4)">Stress Test <span class="sa">↕</span></th>
@@ -753,33 +753,20 @@ function yn(v){
 function rc(v){return v<100?'vg':v<200?'vo':'vr'}
 function ec(v){return v>=88?'vg':v>=80?'vo':'vr'}
 
-function effSparkline(curve){
-  if(!curve) return '';
-  const pts=curve.split(',').map(s=>s.trim()).filter(Boolean).map(s=>{
+function parseEffCurve(curve){
+  if(!curve) return [];
+  return curve.split(',').map(s=>s.trim()).filter(Boolean).map(s=>{
     const m=s.match(/^(.*?):\s*([\d.]+)\s*%?$/);
     return m?{label:m[1].trim(),val:parseFloat(m[2])}:null;
   }).filter(Boolean);
-  if(pts.length<2) return '';
-  const vals=pts.map(p=>p.val);
-  const min=Math.min(...vals), max=Math.max(...vals), range=(max-min)||1;
-  const W=64,H=18,gap=2;
-  const bw=(W-gap*(pts.length-1))/pts.length;
-  const bars=pts.map((p,i)=>{
-    const bh=4+(p.val-min)/range*12;
-    const x=i*(bw+gap), y=H-bh;
-    const color=p.val>=88?'var(--green)':p.val>=80?'var(--orange)':'var(--red)';
-    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="1" fill="${color}"/>`;
-  }).join('');
-  // Подписи по краям — первое и последнее измеренное напряжение,
-  // чтобы сразу было видно, что ось X — это рост напряжения слева направо
-  const firstV=(pts[0].label.split('/')[0]||'').trim();
-  const lastV=(pts[pts.length-1].label.split('/')[0]||'').trim();
-  return `<span class="eff-spark" data-info="${escAttr(curve)}" onclick="showInfoPopover(this)" style="display:inline-flex;flex-direction:column;align-items:stretch;vertical-align:middle;margin-left:7px;cursor:pointer;width:${W}px">
-    <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${bars}</svg>
-    <span style="display:flex;justify-content:space-between;font-size:8px;color:var(--text3);line-height:1;margin-top:1px">
-      <span>${firstV}</span><span>${lastV}</span>
-    </span>
-  </span>`;
+}
+function effColor(v){return v>=90?'vg':v>=80?'vo':'vr'}
+function effLines(curve){
+  const pts=parseEffCurve(curve);
+  if(!pts.length) return '';
+  return `<div style="margin-top:4px;font-size:10px;font-weight:600;line-height:1.65">
+    ${pts.map(p=>`<div class="${effColor(p.val)}">${p.label}: ${p.val}%</div>`).join('')}
+  </div>`;
 }
 function ytId(url){
   if(!url) return '';
@@ -907,7 +894,7 @@ function showInfoPopover(el){
 document.addEventListener('click',e=>{
   const pop=document.getElementById('info-popover');
   if(!pop.classList.contains('show')) return;
-  if(e.target.closest('.info-icon,.price-info,.eff-spark')) return;
+  if(e.target.closest('.info-icon,.price-info')) return;
   if(!e.target.closest('#info-popover')){ pop.classList.remove('show'); pop._srcEl=null; }
 });
 document.addEventListener('keydown',e=>{
@@ -1016,7 +1003,7 @@ const CMP_FIELDS={
   chargers:[
     {label:'Ports',          get:r=>`<span class="chip">${r.ports}</span>`},
     {label:'Power',          get:r=>`<div>${r.pwr} W <span style="font-size:10px;color:var(--text3)">/ port</span></div><div class="sub">${r.total_pwr} W total</div>${r.pwr>=r.total_pwr?'<div style="font-size:10px;font-weight:600;color:var(--green)">★ full power solo</div>':''}`, win:rows=>rows.reduce((a,b)=>b.total_pwr>a.total_pwr?b:a).name},
-    {label:'Peak Efficiency',get:r=>`<span class="num ${ec(r.eff)}">${r.eff}%</span>${r.eff_curve?`<div class="sub" style="margin-top:3px;font-size:10px">${r.eff_curve}</div>`:''}`, win:rows=>rows.reduce((a,b)=>b.eff>a.eff?b:a).name},
+    {label:'Peak Efficiency',get:r=>`<span class="num ${ec(r.eff)}">${r.eff}%</span>${effLines(r.eff_curve)}`, win:rows=>rows.reduce((a,b)=>b.eff>a.eff?b:a).name},
     {label:'Ripple (peak)',  get:r=>`<span class="num ${r.ripple<=30?'vg':r.ripple<=60?'vo':'vr'}">${r.ripple} mV</span>`, win:rows=>rows.reduce((a,b)=>b.ripple<a.ripple?b:a).name},
     {label:'Port Reset',     get:r=>r.ports_reboot?'<span class="b bo"><i class="ti ti-alert-triangle" style="font-size:12px"></i> Resets ports</span>':'<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Stable</span>'},
     {label:'Protocols',      get:r=>`<span class="tag">${r.pd}</span> ${(r.protocols_extra||'').split(',').map(s=>s.trim()).filter(Boolean).map(s=>`<span class="tag">${s}</span>`).join(' ')}${r.xiaomi_tc?'<span class="tag">Xiaomi Turbo Charge</span>':''}`},
@@ -1134,7 +1121,7 @@ function renderChargers(rows){
       <div class="sub">${r.total_pwr} W total</div>
       ${r.pwr>=r.total_pwr?`<div style="font-size:10px;font-weight:600;color:var(--green)">★ full power solo</div>`:''}
     </td>
-    <td class="num ${ec(r.eff)}">${r.eff}%${effSparkline(r.eff_curve)}</td>
+    <td class="num ${ec(r.eff)}">${r.eff}%${effLines(r.eff_curve)}</td>
     <td class="num ${r.ripple<=30?'vg':r.ripple<=60?'vo':'vr'}">${r.ripple} mV</td>
     <td>${r.ports_reboot?`<span class="b bo"><i class="ti ti-alert-triangle" style="font-size:12px"></i> Resets ports</span>`:`<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Stable</span>`}</td>
     <td>
