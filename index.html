@@ -752,6 +752,26 @@ function yn(v){
 }
 function rc(v){return v<100?'vg':v<200?'vo':'vr'}
 function ec(v){return v>=88?'vg':v>=80?'vo':'vr'}
+
+function effSparkline(curve){
+  if(!curve) return '';
+  const pts=curve.split(',').map(s=>s.trim()).filter(Boolean).map(s=>{
+    const m=s.match(/^(.*?):\s*([\d.]+)\s*%?$/);
+    return m?{label:m[1].trim(),val:parseFloat(m[2])}:null;
+  }).filter(Boolean);
+  if(pts.length<2) return '';
+  const vals=pts.map(p=>p.val);
+  const min=Math.min(...vals), max=Math.max(...vals), range=(max-min)||1;
+  const W=64,H=18,gap=2;
+  const bw=(W-gap*(pts.length-1))/pts.length;
+  const bars=pts.map((p,i)=>{
+    const bh=4+(p.val-min)/range*12;
+    const x=i*(bw+gap), y=H-bh;
+    const color=p.val>=88?'var(--green)':p.val>=80?'var(--orange)':'var(--red)';
+    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="1" fill="${color}"/>`;
+  }).join('');
+  return `<svg class="eff-spark" data-info="${escAttr(curve)}" onclick="showInfoPopover(this)" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="vertical-align:middle;margin-left:7px;cursor:pointer">${bars}</svg>`;
+}
 function ytId(url){
   if(!url) return '';
   const m=url.match(/(?:youtu\.be\/|v=|shorts\/)([\w-]{11})/);
@@ -878,7 +898,7 @@ function showInfoPopover(el){
 document.addEventListener('click',e=>{
   const pop=document.getElementById('info-popover');
   if(!pop.classList.contains('show')) return;
-  if(e.target.closest('.info-icon,.price-info')) return;
+  if(e.target.closest('.info-icon,.price-info,.eff-spark')) return;
   if(!e.target.closest('#info-popover')){ pop.classList.remove('show'); pop._srcEl=null; }
 });
 document.addEventListener('keydown',e=>{
@@ -1105,7 +1125,7 @@ function renderChargers(rows){
       <div class="sub">${r.total_pwr} W total</div>
       ${r.pwr>=r.total_pwr?`<div style="font-size:10px;font-weight:600;color:var(--green)">★ full power solo</div>`:''}
     </td>
-    <td class="num ${ec(r.eff)}">${r.eff}%${r.eff_curve?` <i class="ti ti-info-circle info-icon" data-info="${escAttr(r.eff_curve)}" onclick="showInfoPopover(this)"></i>`:''}</td>
+    <td class="num ${ec(r.eff)}">${r.eff}%${effSparkline(r.eff_curve)}</td>
     <td class="num ${r.ripple<=30?'vg':r.ripple<=60?'vo':'vr'}">${r.ripple} mV</td>
     <td>${r.ports_reboot?`<span class="b bo"><i class="ti ti-alert-triangle" style="font-size:12px"></i> Resets ports</span>`:`<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Stable</span>`}</td>
     <td>
