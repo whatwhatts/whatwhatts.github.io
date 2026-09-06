@@ -761,11 +761,15 @@ function parseEffCurve(curve){
   }).filter(Boolean);
 }
 function effColor(v){return v>=90?'vg':v>=80?'vo':'vr'}
-function effLines(curve){
+function effLines(curve,peakEff){
   const pts=parseEffCurve(curve);
-  if(!pts.length) return '';
+  // Прячем точку, которая просто дублирует то же число, что уже показано крупным шрифтом сверху —
+  // это одно и то же измерение, дважды его видеть незачем. Если значения разошлись — оставляем обе,
+  // раз это уже не дубль, а два разных факта.
+  const filtered=(peakEff!=null)?pts.filter(p=>Math.round(p.val)!==Math.round(peakEff)):pts;
+  if(!filtered.length) return '';
   return `<div style="margin-top:4px;font-size:10px;font-weight:600;line-height:1.65">
-    ${pts.map(p=>`<div class="${effColor(p.val)}">${p.label}: ${p.val}%</div>`).join('')}
+    ${filtered.map(p=>`<div class="${effColor(p.val)}">${p.label}: ${p.val}%</div>`).join('')}
   </div>`;
 }
 function ytId(url){
@@ -1003,7 +1007,7 @@ const CMP_FIELDS={
   chargers:[
     {label:'Ports',          get:r=>`<span class="chip">${r.ports}</span>`},
     {label:'Power',          get:r=>`<div>${r.pwr} W <span style="font-size:10px;color:var(--text3)">/ port</span></div><div class="sub">${r.total_pwr} W total</div>${r.pwr>=r.total_pwr?'<div style="font-size:10px;font-weight:600;color:var(--green)">★ full power solo</div>':''}`, win:rows=>rows.reduce((a,b)=>b.total_pwr>a.total_pwr?b:a).name},
-    {label:'Peak Efficiency',get:r=>`<span class="num ${ec(r.eff)}">${r.eff}%</span>${effLines(r.eff_curve)}`, win:rows=>rows.reduce((a,b)=>b.eff>a.eff?b:a).name},
+    {label:'Peak Efficiency',get:r=>`<span class="num ${ec(r.eff)}">${r.eff}%</span>${effLines(r.eff_curve,r.eff)}`, win:rows=>rows.reduce((a,b)=>b.eff>a.eff?b:a).name},
     {label:'Ripple (peak)',  get:r=>`<span class="num ${r.ripple<=30?'vg':r.ripple<=60?'vo':'vr'}">${r.ripple} mV</span>`, win:rows=>rows.reduce((a,b)=>b.ripple<a.ripple?b:a).name},
     {label:'Port Reset',     get:r=>r.ports_reboot?'<span class="b bo"><i class="ti ti-alert-triangle" style="font-size:12px"></i> Resets ports</span>':'<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Stable</span>'},
     {label:'Protocols',      get:r=>`<span class="tag">${r.pd}</span> ${(r.protocols_extra||'').split(',').map(s=>s.trim()).filter(Boolean).map(s=>`<span class="tag">${s}</span>`).join(' ')}${r.xiaomi_tc?'<span class="tag">Xiaomi Turbo Charge</span>':''}`},
@@ -1121,7 +1125,7 @@ function renderChargers(rows){
       <div class="sub">${r.total_pwr} W total</div>
       ${r.pwr>=r.total_pwr?`<div style="font-size:10px;font-weight:600;color:var(--green)">★ full power solo</div>`:''}
     </td>
-    <td class="num ${ec(r.eff)}">${r.eff}%${effLines(r.eff_curve)}</td>
+    <td class="num ${ec(r.eff)}">${r.eff}%${effLines(r.eff_curve,r.eff)}</td>
     <td class="num ${r.ripple<=30?'vg':r.ripple<=60?'vo':'vr'}">${r.ripple} mV</td>
     <td>${r.ports_reboot?`<span class="b bo"><i class="ti ti-alert-triangle" style="font-size:12px"></i> Resets ports</span>`:`<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Stable</span>`}</td>
     <td>
