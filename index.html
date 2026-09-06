@@ -200,8 +200,13 @@ footer{border-top:1px solid var(--border);padding:1.5rem 0;font-size:11px;color:
 .tag{font-size:10px;padding:2px 7px;border-radius:999px;background:var(--surface2);border:1px solid var(--border);color:var(--text3)}
 .price-cell{display:flex;flex-direction:column;gap:4px;align-items:flex-start}
 .price-val{font-size:15px;font-weight:700;color:var(--accent);display:flex;align-items:center;gap:5px}
-.price-info{font-size:11px;color:var(--text3);cursor:help;opacity:.7}
+.price-info{font-size:11px;color:var(--text3);cursor:pointer;opacity:.7}
 .price-info:hover{opacity:1}
+.info-icon{font-size:11px;color:var(--text3);cursor:pointer;opacity:.7;margin-left:3px}
+.info-icon:hover{opacity:1}
+
+.info-popover{position:fixed;display:none;background:var(--surface2);border:1px solid var(--borders);border-radius:var(--r);padding:9px 13px;font-size:12px;color:var(--text2);max-width:260px;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:150;line-height:1.55}
+.info-popover.show{display:block}
 .card-link{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:500;color:var(--accent);border:1px solid var(--blueb);border-radius:var(--r);padding:5px 10px;background:var(--bluebg);transition:opacity .15s}
 .card-link:hover{opacity:.8}
 
@@ -602,6 +607,8 @@ footer{border-top:1px solid var(--border);padding:1.5rem 0;font-size:11px;color:
  </div>
 </footer>
 
+<div class="info-popover" id="info-popover"></div>
+
 <div class="cmp-bar" id="cmp-bar">
  <span class="cmp-bar-txt" id="cmp-bar-txt"><b>0</b> <em>selected — pick 2 to 4 to compare</em></span>
  <button class="cmp-bar-clear" onclick="clearCmp()">Clear</button>
@@ -767,7 +774,7 @@ function valueTag(v){
 function priceCell(price,value){
   if(!price) return `<span class="sub">—</span>`;
   return `<div class="price-cell">
-    <div class="price-val">$${price}<i class="ti ti-info-circle price-info" title="Price at time of review — check the Buy link for the current price"></i></div>
+    <div class="price-val">$${price}<i class="ti ti-info-circle price-info" data-info="Price at time of review — check the Buy link for the current price" onclick="showInfoPopover(this)"></i></div>
     ${valueTag(value)}
   </div>`;
 }
@@ -841,6 +848,44 @@ document.addEventListener('click',()=>{
 // ══════════════════════════════════════════════
 //  COMPARE
 // ══════════════════════════════════════════════
+function escAttr(s){
+  return String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
+
+function showInfoPopover(el){
+  const pop=document.getElementById('info-popover');
+  const text=el.dataset.info;
+  if(!text) return;
+  if(pop.classList.contains('show') && pop._srcEl===el){
+    pop.classList.remove('show');
+    pop._srcEl=null;
+    return;
+  }
+  pop.textContent=text;
+  pop.classList.add('show');
+  pop._srcEl=el;
+  const r=el.getBoundingClientRect();
+  requestAnimationFrame(()=>{
+    const pr=pop.getBoundingClientRect();
+    let left=r.left+r.width/2-pr.width/2;
+    left=Math.max(8,Math.min(left,window.innerWidth-pr.width-8));
+    let top=r.bottom+8;
+    if(top+pr.height>window.innerHeight-8) top=r.top-pr.height-8;
+    pop.style.left=left+'px';
+    pop.style.top=top+'px';
+  });
+}
+document.addEventListener('click',e=>{
+  const pop=document.getElementById('info-popover');
+  if(!pop.classList.contains('show')) return;
+  if(e.target.closest('.info-icon,.price-info')) return;
+  if(!e.target.closest('#info-popover')){ pop.classList.remove('show'); pop._srcEl=null; }
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){ const pop=document.getElementById('info-popover'); pop.classList.remove('show'); pop._srcEl=null; }
+});
+window.addEventListener('scroll',()=>{ const pop=document.getElementById('info-popover'); pop.classList.remove('show'); pop._srcEl=null; },true);
+
 const CMP_MAX=4;
 const CMP={
   cables:    {mode:false, sel:new Set()},
@@ -942,7 +987,7 @@ const CMP_FIELDS={
   chargers:[
     {label:'Ports',          get:r=>`<span class="chip">${r.ports}</span>`},
     {label:'Power',          get:r=>`<div>${r.pwr} W <span style="font-size:10px;color:var(--text3)">/ port</span></div><div class="sub">${r.total_pwr} W total</div>${r.pwr>=r.total_pwr?'<div style="font-size:10px;font-weight:600;color:var(--green)">★ full power solo</div>':''}`, win:rows=>rows.reduce((a,b)=>b.total_pwr>a.total_pwr?b:a).name},
-    {label:'Peak Efficiency',get:r=>`<span class="num ${ec(r.eff)}">${r.eff}%</span>`, win:rows=>rows.reduce((a,b)=>b.eff>a.eff?b:a).name},
+    {label:'Peak Efficiency',get:r=>`<span class="num ${ec(r.eff)}">${r.eff}%</span>${r.eff_curve?`<div class="sub" style="margin-top:3px;font-size:10px">${r.eff_curve}</div>`:''}`, win:rows=>rows.reduce((a,b)=>b.eff>a.eff?b:a).name},
     {label:'Ripple (peak)',  get:r=>`<span class="num ${r.ripple<=30?'vg':r.ripple<=60?'vo':'vr'}">${r.ripple} mV</span>`, win:rows=>rows.reduce((a,b)=>b.ripple<a.ripple?b:a).name},
     {label:'Port Reset',     get:r=>r.ports_reboot?'<span class="b bo"><i class="ti ti-alert-triangle" style="font-size:12px"></i> Resets ports</span>':'<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Stable</span>'},
     {label:'Protocols',      get:r=>`<span class="tag">${r.pd}</span> ${(r.protocols_extra||'').split(',').map(s=>s.trim()).filter(Boolean).map(s=>`<span class="tag">${s}</span>`).join(' ')}${r.xiaomi_tc?'<span class="tag">Xiaomi Turbo Charge</span>':''}`},
@@ -1060,7 +1105,7 @@ function renderChargers(rows){
       <div class="sub">${r.total_pwr} W total</div>
       ${r.pwr>=r.total_pwr?`<div style="font-size:10px;font-weight:600;color:var(--green)">★ full power solo</div>`:''}
     </td>
-    <td class="num ${ec(r.eff)}">${r.eff}%</td>
+    <td class="num ${ec(r.eff)}">${r.eff}%${r.eff_curve?` <i class="ti ti-info-circle info-icon" data-info="${escAttr(r.eff_curve)}" onclick="showInfoPopover(this)"></i>`:''}</td>
     <td class="num ${r.ripple<=30?'vg':r.ripple<=60?'vo':'vr'}">${r.ripple} mV</td>
     <td>${r.ports_reboot?`<span class="b bo"><i class="ti ti-alert-triangle" style="font-size:12px"></i> Resets ports</span>`:`<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Stable</span>`}</td>
     <td>
