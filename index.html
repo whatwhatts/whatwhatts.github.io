@@ -439,12 +439,13 @@ footer{border-top:1px solid var(--border);padding:1.5rem 0;font-size:11px;color:
       <th onclick="srt('powerbanks',1)">Rated <span class="sa">↕</span></th>
       <th onclick="srt('powerbanks',2)">Efficiency & Capacity <span class="sa">↕</span> <i class="ti ti-info-circle" style="font-size:11px;opacity:.6" title="Rated = manufacturer's claimed spec · Measured = obtained during testing"></i></th>
       <th onclick="srt('powerbanks',3)">Output Power <span class="sa">↕</span></th>
+      <th onclick="srt('powerbanks',4)">Ripple (peak) <span class="sa">↕</span></th>
       <th>Charging Input</th>
-      <th onclick="srt('powerbanks',4)">Stress Test <span class="sa">↕</span></th>
+      <th onclick="srt('powerbanks',5)">Stress Test <span class="sa">↕</span></th>
       <th>Wireless (Qi)</th>
       <th>Pass-through</th>
-      <th onclick="srt('powerbanks',5)">Verdict <span class="sa">↕</span></th>
-      <th onclick="srt('powerbanks',6)">Price <span class="sa">↕</span></th>
+      <th onclick="srt('powerbanks',6)">Verdict <span class="sa">↕</span></th>
+      <th onclick="srt('powerbanks',7)">Price <span class="sa">↕</span></th>
       <th>Links</th>
      </tr></thead>
      <tbody id="body-powerbanks"></tbody>
@@ -772,6 +773,33 @@ function effLines(curve,peakEff){
     ${filtered.map(p=>`<div class="${effColor(p.val)}">${p.label}: ${p.val}%</div>`).join('')}
   </div>`;
 }
+
+function parseRippleCurve(curve){
+  if(!curve) return [];
+  return curve.split(',').map(s=>s.trim()).filter(Boolean).map(s=>{
+    const m=s.match(/^(.*?):\s*([\d.]+)\s*mV$/i);
+    if(!m) return null;
+    const label=m[1].trim();
+    const mv=parseFloat(m[2]);
+    const vm=label.match(/^([\d.]+)\s*V/i);
+    return {label,mv,voltage:vm?parseFloat(vm[1]):null};
+  }).filter(Boolean);
+}
+// Порог не в абсолютных мВ, а в % от номинального напряжения в этой точке —
+// одни и те же 20 мВ на 5V куда заметнее, чем на 20V
+function rippleColorPct(mv,voltage){
+  if(!voltage) return 'vo';
+  const pct=mv/(voltage*10);
+  return pct<1?'vg':pct<=2?'vo':'vr';
+}
+function rippleLines(curve,peakMv){
+  const pts=parseRippleCurve(curve);
+  const filtered=(peakMv!=null)?pts.filter(p=>Math.round(p.mv)!==Math.round(peakMv)):pts;
+  if(!filtered.length) return '';
+  return `<div style="margin-top:4px;font-size:10px;font-weight:600;line-height:1.65">
+    ${filtered.map(p=>`<div class="${rippleColorPct(p.mv,p.voltage)}">${p.label}: ${p.mv}mV</div>`).join('')}
+  </div>`;
+}
 function ytId(url){
   if(!url) return '';
   const m=url.match(/(?:youtu\.be\/|v=|shorts\/)([\w-]{11})/);
@@ -805,6 +833,8 @@ function lnks(yt,buy){
   </div>`;
 }
 function tc(v){return v>=75?'vr':v>=60?'vo':'vg'}
+function toF(c){return Math.round(c*9/5+32)}
+function tSpan(c){return `<span class="${tc(c)}">${c}°C <span style="opacity:.6;font-weight:400">(${toF(c)}°F)</span></span>`;}
 function stressTier(pwr){
   if(pwr>=240) return '140W test (28V/5A)';
   if(pwr>=100) return '100W test (20V/5A)';
@@ -968,25 +998,25 @@ function updateCmpBar(){
 // ── Какие поля показывать в сравнении для каждой категории ──
 function stressCellCables(r){
   return `${r.stress_pass?'<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>':'<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> Throttled</span>'}
-    <div class="sub" style="margin-top:4px">Conn <span class="${tc(r.stress_conn_c)}">${r.stress_conn_c}°C</span> · Cable <span class="${tc(r.stress_cable_c)}">${r.stress_cable_c}°C</span></div>`;
+    <div class="sub" style="margin-top:4px">Conn ${tSpan(r.stress_conn_c)} · Cable ${tSpan(r.stress_cable_c)}</div>`;
 }
 function stressCellChargers(r){
   return `<div class="sub" style="font-weight:600">Single port</div>
     <div>${r.throttle_single_pass?'<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>':`<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> → ${r.throttle_single_drop} W</span>`}</div>
-    <div class="sub">Case: <span class="${tc(r.case_temp_single_c)}">${r.case_temp_single_c}°C</span></div>
+    <div class="sub">Case: ${tSpan(r.case_temp_single_c)}</div>
     <div class="sub" style="font-weight:600;margin-top:6px">Total load</div>
     <div>${r.throttle_total_pass?'<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>':`<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> → ${r.throttle_total_drop} W</span>`}</div>
-    <div class="sub">Case: <span class="${tc(r.case_temp_total_c)}">${r.case_temp_total_c}°C</span></div>`;
+    <div class="sub">Case: ${tSpan(r.case_temp_total_c)}</div>`;
 }
 function stressCellPowerbanks(r){
   return `<div class="sub" style="font-weight:600">5V discharge</div>
     <div>${r.throttle_5v_pass?'<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>':`<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> → ${r.throttle_5v_drop} W</span>`}</div>
     <div class="sub" style="font-weight:600;margin-top:6px">Single port</div>
     <div>${r.throttle_single_pass?'<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>':`<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> → ${r.throttle_single_drop} W</span>`}</div>
-    <div class="sub">Case: <span class="${tc(r.case_temp_single_c)}">${r.case_temp_single_c}°C</span></div>
+    <div class="sub">Case: ${tSpan(r.case_temp_single_c)}</div>
     <div class="sub" style="font-weight:600;margin-top:6px">Total load</div>
     <div>${r.throttle_total_pass?'<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>':`<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> → ${r.throttle_total_drop} W</span>`}</div>
-    <div class="sub">Case: <span class="${tc(r.case_temp_total_c)}">${r.case_temp_total_c}°C</span></div>`;
+    <div class="sub">Case: ${tSpan(r.case_temp_total_c)}</div>`;
 }
 
 // win: необязательная функция (arr rows)->key лучшего значения, для подсветки победителя в строке
@@ -1008,7 +1038,7 @@ const CMP_FIELDS={
     {label:'Ports',          get:r=>`<span class="chip">${r.ports}</span>`},
     {label:'Power',          get:r=>`<div>${r.pwr} W <span style="font-size:10px;color:var(--text3)">/ port</span></div><div class="sub">${r.total_pwr} W total</div>${r.pwr>=r.total_pwr?'<div style="font-size:10px;font-weight:600;color:var(--green)">★ full power solo</div>':''}`, win:rows=>rows.reduce((a,b)=>b.total_pwr>a.total_pwr?b:a).name},
     {label:'Peak Efficiency',get:r=>`<span class="num ${ec(r.eff)}">${r.eff}%</span>${effLines(r.eff_curve,r.eff)}`, win:rows=>rows.reduce((a,b)=>b.eff>a.eff?b:a).name},
-    {label:'Ripple (peak)',  get:r=>`<span class="num ${r.ripple<=30?'vg':r.ripple<=60?'vo':'vr'}">${r.ripple} mV</span>`, win:rows=>rows.reduce((a,b)=>b.ripple<a.ripple?b:a).name},
+    {label:'Ripple (peak)',  get:r=>`<span class="num ${r.ripple<=30?'vg':r.ripple<=60?'vo':'vr'}">${r.ripple} mV</span>${rippleLines(r.ripple_curve,r.ripple)}`, win:rows=>rows.reduce((a,b)=>b.ripple<a.ripple?b:a).name},
     {label:'Port Reset',     get:r=>r.ports_reboot?'<span class="b bo"><i class="ti ti-alert-triangle" style="font-size:12px"></i> Resets ports</span>':'<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Stable</span>'},
     {label:'Protocols',      get:r=>`<span class="tag">${r.pd}</span> ${(r.protocols_extra||'').split(',').map(s=>s.trim()).filter(Boolean).map(s=>`<span class="tag">${s}</span>`).join(' ')}${r.xiaomi_tc?'<span class="tag">Xiaomi Turbo Charge</span>':''}`},
     {label:'Display',        get:r=>yn(r.display)},
@@ -1022,6 +1052,7 @@ const CMP_FIELDS={
     {label:'Rated Capacity', get:r=>`${r.rated.toLocaleString()} mAh<div class="sub">${r.rated_wh} Wh rated</div>`, win:rows=>rows.reduce((a,b)=>b.rated_wh>a.rated_wh?b:a).name},
     {label:'Measured',       get:r=>`${r.real} Wh <span style="font-size:10px;color:var(--text3)">measured</span><div class="sub"><span class="${ec(r.eff5v)}">${r.eff5v}%</span> @5V · <span class="${ec(r.eff_max)}">${r.eff_max}%</span> @max</div>`, win:rows=>rows.reduce((a,b)=>b.real>a.real?b:a).name},
     {label:'Output Power',   get:r=>`<div>${r.maxpwr} W <span style="font-size:10px;color:var(--text3)">/ port</span></div><div class="sub">${r.total_pwr} W total</div>${r.maxpwr>=r.total_pwr?'<div style="font-size:10px;font-weight:600;color:var(--green)">★ full power solo</div>':''}`, win:rows=>rows.reduce((a,b)=>b.total_pwr>a.total_pwr?b:a).name},
+    {label:'Ripple (peak)',  get:r=>r.ripple?`<span class="num ${r.ripple<=30?'vg':r.ripple<=60?'vo':'vr'}">${r.ripple} mV</span>${rippleLines(r.ripple_curve,r.ripple)}`:'—', win:rows=>rows.filter(r=>r.ripple).length?rows.filter(r=>r.ripple).reduce((a,b)=>b.ripple<a.ripple?b:a).name:null},
     {label:'Charging Input', get:r=>`${r.max_charge_pwr} W input<div class="sub">${r.recharge}</div>`, win:rows=>rows.reduce((a,b)=>b.max_charge_pwr>a.max_charge_pwr?b:a).name},
     {label:'Stress Test',    get:stressCellPowerbanks},
     {label:'Wireless (Qi)',  get:r=>r.wireless_qi?`${r.qi_standard||'Qi'}<div class="sub">${r.qi_pwr} W rated · ${r.qi_real_wh} Wh @ ${r.qi_eff}%</div>`:yn(false)},
@@ -1090,7 +1121,7 @@ function renderCables(rows){
     <td>
       <div>${r.stress_pass?`<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>`:`<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> Throttled</span>`}</div>
       <div class="sub">${stressTier(r.pwr)}</div>
-      <div class="sub">Conn <span class="${tc(r.stress_conn_c)}">${r.stress_conn_c}°C</span> · Cable <span class="${tc(r.stress_cable_c)}">${r.stress_cable_c}°C</span></div>
+      <div class="sub">Conn ${tSpan(r.stress_conn_c)} · Cable ${tSpan(r.stress_cable_c)}</div>
     </td>
     <td>${badge(r.v)}</td>
     <td>${priceCell(r.price,r.value)}</td>
@@ -1126,15 +1157,15 @@ function renderChargers(rows){
       ${r.pwr>=r.total_pwr?`<div style="font-size:10px;font-weight:600;color:var(--green)">★ full power solo</div>`:''}
     </td>
     <td class="num ${ec(r.eff)}">${r.eff}%${effLines(r.eff_curve,r.eff)}</td>
-    <td class="num ${r.ripple<=30?'vg':r.ripple<=60?'vo':'vr'}">${r.ripple} mV</td>
+    <td class="num ${r.ripple<=30?'vg':r.ripple<=60?'vo':'vr'}">${r.ripple} mV${rippleLines(r.ripple_curve,r.ripple)}</td>
     <td>${r.ports_reboot?`<span class="b bo"><i class="ti ti-alert-triangle" style="font-size:12px"></i> Resets ports</span>`:`<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Stable</span>`}</td>
     <td>
       <div class="sub" style="font-weight:600">Single port</div>
       <div>${r.throttle_single_pass?`<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>`:`<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> → ${r.throttle_single_drop} W</span>`}</div>
-      <div class="sub">Case: <span class="${tc(r.case_temp_single_c)}">${r.case_temp_single_c}°C</span></div>
+      <div class="sub">Case: ${tSpan(r.case_temp_single_c)}</div>
       <div class="sub" style="font-weight:600;margin-top:6px">Total load</div>
       <div>${r.throttle_total_pass?`<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>`:`<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> → ${r.throttle_total_drop} W</span>`}</div>
-      <div class="sub">Case: <span class="${tc(r.case_temp_total_c)}">${r.case_temp_total_c}°C</span></div>
+      <div class="sub">Case: ${tSpan(r.case_temp_total_c)}</div>
     </td>
     <td>${badge(r.v)}</td>
     <td>${priceCell(r.price,r.value)}</td>
@@ -1146,7 +1177,7 @@ function renderChargers(rows){
 
 function renderPowerbanks(rows){
   const b=document.getElementById('body-powerbanks');
-  if(!rows.length){b.innerHTML=`<tr><td colspan="11"><div class="empty"><i class="ti ti-search"></i>No results found</div></td></tr>`;return;}
+  if(!rows.length){b.innerHTML=`<tr><td colspan="12"><div class="empty"><i class="ti ti-search"></i>No results found</div></td></tr>`;return;}
   b.innerHTML=rows.map(r=>`<tr>
     <td class="cmp-td"><input type="checkbox" class="cmp-chk" ${CMP.powerbanks.sel.has(r.name)?'checked':''} ${(!CMP.powerbanks.sel.has(r.name)&&CMP.powerbanks.sel.size>=CMP_MAX)?'disabled':''}></td>
     <td>
@@ -1173,6 +1204,7 @@ function renderPowerbanks(rows){
       <div class="sub">${r.total_pwr} W total</div>
       ${r.maxpwr>=r.total_pwr?`<div style="font-size:10px;font-weight:600;color:var(--green)">★ full power solo</div>`:''}
     </td>
+    <td class="num ${r.ripple?(r.ripple<=30?'vg':r.ripple<=60?'vo':'vr'):''}">${r.ripple?r.ripple+' mV':'—'}${r.ripple?rippleLines(r.ripple_curve,r.ripple):''}</td>
     <td style="font-size:12px;color:var(--text2);line-height:1.6">
       <div class="num" style="font-size:13px">${r.max_charge_pwr} W <span style="font-size:10px;font-weight:400;color:var(--text3)">input</span></div>
       <div class="sub">${r.recharge}</div>
@@ -1182,10 +1214,10 @@ function renderPowerbanks(rows){
       <div>${r.throttle_5v_pass?`<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>`:`<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> → ${r.throttle_5v_drop} W</span>`}</div>
       <div class="sub" style="font-weight:600;margin-top:6px">Single port</div>
       <div>${r.throttle_single_pass?`<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>`:`<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> → ${r.throttle_single_drop} W</span>`}</div>
-      <div class="sub">Case: <span class="${tc(r.case_temp_single_c)}">${r.case_temp_single_c}°C</span></div>
+      <div class="sub">Case: ${tSpan(r.case_temp_single_c)}</div>
       <div class="sub" style="font-weight:600;margin-top:6px">Total load</div>
       <div>${r.throttle_total_pass?`<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>`:`<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> → ${r.throttle_total_drop} W</span>`}</div>
-      <div class="sub">Case: <span class="${tc(r.case_temp_total_c)}">${r.case_temp_total_c}°C</span></div>
+      <div class="sub">Case: ${tSpan(r.case_temp_total_c)}</div>
     </td>
     <td>${yn(r.pt==='Yes'?true:r.pt==='Limited'?r.pt:false)}</td>
     <td>${badge(r.v)}</td>
@@ -1276,7 +1308,7 @@ function applyF(name){
 const COLS={
   cables:    ['name','conn','len','res','pwr','spd','stress_conn_c','v','price'],
   chargers:  ['name','pwr','eff','ripple','case_temp_total_c','v','price'],
-  powerbanks:['name','rated_wh','real','maxpwr','case_temp_total_c','v','price'],
+  powerbanks:['name','rated_wh','real','maxpwr','ripple','case_temp_total_c','v','price'],
 };
 
 function srt(name,col){
