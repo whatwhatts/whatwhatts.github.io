@@ -1001,20 +1001,22 @@ function stressCellCables(r){
     <div class="sub" style="margin-top:4px">Conn ${tSpan(r.stress_conn_c)} · Cable ${tSpan(r.stress_cable_c)}</div>`;
 }
 function stressCellChargers(r){
-  return `<div class="sub" style="font-weight:600">Single port</div>
+  return `<div class="sub" style="font-weight:600">Single port${r.pwr?` (${r.pwr}W)`:''}</div>
     <div>${r.throttle_single_pass?'<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>':`<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> → ${r.throttle_single_drop} W</span>`}</div>
     <div class="sub">Case: ${tSpan(r.case_temp_single_c)}</div>
-    <div class="sub" style="font-weight:600;margin-top:6px">Total load</div>
+    <div class="sub" style="font-weight:600;margin-top:6px">Total load${r.total_pwr?` (${r.total_pwr}W)`:''}</div>
     <div>${r.throttle_total_pass?'<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>':`<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> → ${r.throttle_total_drop} W</span>`}</div>
     <div class="sub">Case: ${tSpan(r.case_temp_total_c)}</div>`;
 }
 function stressCellPowerbanks(r){
   return `<div class="sub" style="font-weight:600">5V discharge</div>
     <div>${r.throttle_5v_pass?'<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>':`<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> → ${r.throttle_5v_drop} W</span>`}</div>
-    <div class="sub" style="font-weight:600;margin-top:6px">Single port</div>
+    ${r.wh5v?`<div class="sub">${r.wh5v} Wh delivered</div>`:''}
+    <div class="sub" style="font-weight:600;margin-top:6px">Single port${r.maxpwr?` (${r.maxpwr}W)`:''}</div>
     <div>${r.throttle_single_pass?'<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>':`<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> → ${r.throttle_single_drop} W</span>`}</div>
+    ${r.wh_max?`<div class="sub">${r.wh_max} Wh delivered</div>`:''}
     <div class="sub">Case: ${tSpan(r.case_temp_single_c)}</div>
-    <div class="sub" style="font-weight:600;margin-top:6px">Total load</div>
+    <div class="sub" style="font-weight:600;margin-top:6px">Total load${r.total_pwr?` (${r.total_pwr}W)`:''}</div>
     <div>${r.throttle_total_pass?'<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>':`<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> → ${r.throttle_total_drop} W</span>`}</div>
     <div class="sub">Case: ${tSpan(r.case_temp_total_c)}</div>`;
 }
@@ -1160,12 +1162,7 @@ function renderChargers(rows){
     <td class="num ${r.ripple<=30?'vg':r.ripple<=60?'vo':'vr'}">${r.ripple} mV${rippleLines(r.ripple_curve,r.ripple)}</td>
     <td>${r.ports_reboot?`<span class="b bo"><i class="ti ti-alert-triangle" style="font-size:12px"></i> Resets ports</span>`:`<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Stable</span>`}</td>
     <td>
-      <div class="sub" style="font-weight:600">Single port</div>
-      <div>${r.throttle_single_pass?`<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>`:`<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> → ${r.throttle_single_drop} W</span>`}</div>
-      <div class="sub">Case: ${tSpan(r.case_temp_single_c)}</div>
-      <div class="sub" style="font-weight:600;margin-top:6px">Total load</div>
-      <div>${r.throttle_total_pass?`<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>`:`<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> → ${r.throttle_total_drop} W</span>`}</div>
-      <div class="sub">Case: ${tSpan(r.case_temp_total_c)}</div>
+      ${stressCellChargers(r)}
     </td>
     <td>${badge(r.v)}</td>
     <td>${priceCell(r.price,r.value)}</td>
@@ -1209,16 +1206,7 @@ function renderPowerbanks(rows){
       <div class="num" style="font-size:13px">${r.max_charge_pwr} W <span style="font-size:10px;font-weight:400;color:var(--text3)">input</span></div>
       <div class="sub">${r.recharge}</div>
     </td>
-    <td>
-      <div class="sub" style="font-weight:600">5V discharge</div>
-      <div>${r.throttle_5v_pass?`<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>`:`<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> → ${r.throttle_5v_drop} W</span>`}</div>
-      <div class="sub" style="font-weight:600;margin-top:6px">Single port</div>
-      <div>${r.throttle_single_pass?`<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>`:`<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> → ${r.throttle_single_drop} W</span>`}</div>
-      <div class="sub">Case: ${tSpan(r.case_temp_single_c)}</div>
-      <div class="sub" style="font-weight:600;margin-top:6px">Total load</div>
-      <div>${r.throttle_total_pass?`<span class="b bg"><i class="ti ti-check" style="font-size:12px"></i> Passed</span>`:`<span class="b br"><i class="ti ti-flame" style="font-size:12px"></i> → ${r.throttle_total_drop} W</span>`}</div>
-      <div class="sub">Case: ${tSpan(r.case_temp_total_c)}</div>
-    </td>
+    <td>${stressCellPowerbanks(r)}</td>
     <td>${yn(r.pt==='Yes'?true:r.pt==='Limited'?r.pt:false)}</td>
     <td>${badge(r.v)}</td>
     <td>${priceCell(r.price,r.value)}</td>
