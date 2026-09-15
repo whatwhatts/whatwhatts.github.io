@@ -718,12 +718,15 @@ async function initData(){
   DATA.cables = c; DATA.chargers = ch; DATA.powerbanks = pb;
 
   ['cables','chargers','powerbanks'].forEach(n=>{
+    // По умолчанию — сортировка по названию, чтобы при первом заходе
+    // список не выглядел вразнобой (порядок строк в самой Google Таблице не гарантирован)
+    DATA[n].sort((a,b)=>(a.name||'').localeCompare(b.name||''));
     S[n].sorted = [...DATA[n]];
     const cnt = document.getElementById('cnt-'+n);
     const lbl = document.getElementById('lbl-'+n);
     if(cnt) cnt.textContent = DATA[n].length;
     if(lbl) lbl.textContent = `${DATA[n].length} items`;
-    render(n, DATA[n]);
+    render(n, S[n].sorted);
   });
 }
 
