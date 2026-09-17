@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta name='impact-site-verification' content='e0f27593-98c2-4be6-a5c4-c522fd86dd3f'>
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name='impact-site-verification' content='e0f27593-98c2-4be6-a5c4-c522fd86dd3f'>
 <title>WhatWatts — USB Testing Database</title>
 <meta name="description" content="Real-world USB cable, charger and powerbank tests. Actual measurements, not marketing specs.">
 <link rel="icon" type="image/x-icon" href="favicon.ico">
@@ -828,8 +828,8 @@ function reviewBtn(yt){
     <span class="btn btn-yt"><i class="ti ti-brand-youtube" style="font-size:13px"></i> Review</span>
   </a>`;
 }
-const valColor={'Great Value':'bg','Fair':'bo','Overpriced':'br'};
-const valIcon={'Great Value':'ti-thumb-up','Fair':'ti-minus','Overpriced':'ti-thumb-down'};
+const valColor={'Great Value':'bg','Good Value':'bo','Fair':'bo','Overpriced':'br'};
+const valIcon={'Great Value':'ti-thumb-up','Good Value':'ti-thumb-up','Fair':'ti-minus','Overpriced':'ti-thumb-down'};
 function valueTag(v){
   if(!v) return '';
   return `<span class="b ${valColor[v]||'bx'}" style="margin-top:3px"><i class="ti ${valIcon[v]||'ti-minus'}" style="font-size:11px"></i> ${v}</span>`;
